@@ -18,16 +18,16 @@ from telegram.ext import (
 
 
 # ======================================================
-# ⚙️  الإعدادات العامة
+# ⚙️  الإعدادات العامة (تصحيح جلب القيم الافتراضية)
 # ======================================================
-BOT_TOKEN    = os.getenv("8992305691:AAHsC05CChVGUGHD3ZmS2huPWNPT2Qy65fo", "")
-WEBAPP_URL   = os.getenv("https://xeonbots.onrender.com/", "http://localhost:8000")
+BOT_TOKEN    = os.getenv("BOT_TOKEN", "8992305691:AAHsC05CChVGUGHD3ZmS2huPWNPT2Qy65fo")
+WEBAPP_URL   = os.getenv("WEBAPP_URL", "https://xeonbots.onrender.com")
 HOST         = os.getenv("HOST", "0.0.0.0")
 PORT         = int(os.getenv("PORT", "8000"))
 DB_PATH      = os.getenv("DB_PATH", "ads.db")
-ADMIN_IDS    = [int(x) for x in os.getenv("8233835640", "").split(",") if x.strip().isdigit()]
+ADMIN_IDS    = [int(x) for x in os.getenv("ADMIN_IDS", "8233835640").split(",") if x.strip().isdigit()]
 
-# الإعدادات الافتراضية (قابلة للتعديل من لوحة التحكم)
+# الإعدادات الافتراضية
 DEF_AD_REWARD      = 0.20
 DEF_DAILY_LIMIT    = 10
 DEF_MIN_WITHDRAW   = 10.00
@@ -191,7 +191,7 @@ def init_db():
         );
         """)
 
-        # migrations
+        # التحديثات التلقائية
         for tbl, col, typ in [
             ("ads", "type", "TEXT DEFAULT 'link'"),
             ("ads", "video_file_id", "TEXT"),
@@ -210,7 +210,6 @@ def init_db():
         for k, v in defaults.items():
             conn.execute("INSERT OR IGNORE INTO settings (key,value) VALUES (?,?)", (k, v))
 
-        # بذور أولية
         now = datetime.now(timezone.utc).isoformat()
         if conn.execute("SELECT COUNT(*) FROM ads").fetchone()[0] == 0:
             conn.executemany(
@@ -244,10 +243,8 @@ def set_setting(key, value):
 
 
 def user_to_dict(row):
-    try:
-        account = json.loads(row["withdrawal_data"] or "{}")
-    except Exception:
-        account = {}
+    try: account = json.loads(row["withdrawal_data"] or "{}")
+    except Exception: account = {}
     return {
         "user_id":          row["user_id"],
         "username":         row["username"] or "",
@@ -362,8 +359,10 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"],
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    with open("index.html", "r", encoding="utf-8") as f:
-        return f.read()
+    if os.path.exists("index.html"):
+        with open("index.html", "r", encoding="utf-8") as f:
+            return f.read()
+    return "<h1>AdVault Pro Application Running</h1>"
 
 
 # ---------- Auth ----------
@@ -401,7 +400,7 @@ async def api_me(user_id: int):
     return user_to_dict(fresh)
 
 
-# ---------- Ads (public) ----------
+# ---------- Ads ----------
 @app.get("/api/ads")
 async def api_ads(user_id: int):
     with db() as conn:
@@ -702,7 +701,7 @@ async def notify_admin_ad_request(admin, rid, data, has_video=False):
 
 
 # ======================================================
-# 👑 Admin API Endpoints (للتطبيق المصغر)
+# 👑 Admin API Endpoints
 # ======================================================
 @app.get("/api/admin/stats")
 async def adm_stats(user_id: int):
@@ -996,8 +995,11 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except: pass
     get_or_create_user(user_dict, ref)
 
+    # التحقق من أن الرابط يبدأ بـ https حتى يقبله تليجرام لزر الـ WebApp
+    app_url = WEBAPP_URL if WEBAPP_URL.startswith("https://") else "https://xeonbots.onrender.com"
+    
     kb = [[InlineKeyboardButton("💰 افتح التطبيق واربح",
-                                web_app=WebAppInfo(url=WEBAPP_URL))]]
+                                web_app=WebAppInfo(url=app_url))]]
     await update.message.reply_text(
         f"👋 *مرحباً {u.first_name}*\n\n"
         f"💎 *AdVault Pro*\n"
@@ -1045,7 +1047,6 @@ async def cmd_ref(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown")
 
 
-# ---------- Callback بسيط للوحة البوت ----------
 async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
@@ -1196,7 +1197,6 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def admin_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """معالجة رسائل نصية من المشرف (للإعدادات السريعة والبث)"""
     if not is_admin(update.effective_user.id): return
     state = context.user_data.get("admin_state")
     if not state: return
@@ -1225,7 +1225,6 @@ async def admin_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """استقبال فيديو إعلان من مستخدم عادي"""
     state = context.user_data.get("ad_submit_state")
     if state != "await_video": return
     if not update.message.video:
@@ -1279,6 +1278,7 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def run_bot():
     if not BOT_TOKEN:
         print("⚠️ BOT_TOKEN غير مضبوط"); return
+    
     bot_app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     bot_app.add_handler(CommandHandler("start", cmd_start))
@@ -1296,7 +1296,7 @@ async def run_bot():
     await bot_app.initialize()
     await bot_app.start()
     await bot_app.updater.start_polling()
-    print("✅ البوت يعمل...")
+    print("✅ تم تشغيل البوت بنجاح...")
     while True: await asyncio.sleep(3600)
 
 
