@@ -20,7 +20,7 @@ from telegram.ext import (
 # ======================================================
 # ⚙️  الإعدادات العامة
 # ======================================================
-BOT_TOKEN    = os.getenv("8909959176:AAF6V-RuF5nSAyKh1JOYijYoQJH7ZXB8GSM", "")
+BOT_TOKEN    = os.getenv("8992305691:AAHsC05CChVGUGHD3ZmS2huPWNPT2Qy65fo", "")
 WEBAPP_URL   = os.getenv("https://xeonbots.onrender.com/", "http://localhost:8000")
 HOST         = os.getenv("HOST", "0.0.0.0")
 PORT         = int(os.getenv("PORT", "8000"))
