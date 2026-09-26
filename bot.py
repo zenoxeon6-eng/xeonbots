@@ -21,7 +21,7 @@ from telegram.ext import (
 # ⚙️  الإعدادات العامة
 # ======================================================
 BOT_TOKEN    = os.getenv("8909959176:AAF6V-RuF5nSAyKh1JOYijYoQJH7ZXB8GSM", "")
-WEBAPP_URL   = os.getenv("WEBAPP_URL", "http://localhost:8000")
+WEBAPP_URL   = os.getenv("https://xeonbots.onrender.com/", "http://localhost:8000")
 HOST         = os.getenv("HOST", "0.0.0.0")
 PORT         = int(os.getenv("PORT", "8000"))
 DB_PATH      = os.getenv("DB_PATH", "ads.db")
