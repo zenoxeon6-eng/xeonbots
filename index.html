@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#05050f" />
+<title>💎 AdVault Pro</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  :root{
+    --gold:#ffd700;--gold-2:#ffaa00;--gold-3:#b8860b;
+    --bg:#05050f;--glass:rgba(255,255,255,0.05);--glass-2:rgba(255,255,255,0.09);
+    --border:rgba(255,215,0,0.18);--border-2:rgba(255,215,0,0.35);
+    --text:#fff;--text-dim:#8a8aa0;
+    --green:#00e676;--red:#ff5252;--purple:#a855f7;--blue:#3b82f6;
+  }
+  html,body{height:100%;overflow-x:hidden;overscroll-behavior:none;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI","Cairo",sans-serif;
+    background:var(--bg);color:var(--text);min-height:100vh;user-select:none;-webkit-font-smoothing:antialiased;}
+  body::before{content:"";position:fixed;inset:-50%;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(circle at 20% 20%,rgba(255,215,0,0.08),transparent 35%),
+      radial-gradient(circle at 80% 30%,rgba(168,85,247,0.08),transparent 35%),
+      radial-gradient(circle at 50% 80%,rgba(59,130,246,0.08),transparent 35%);
+    animation:bgMove 20s ease-in-out infinite;}
+  @keyframes bgMove{0%,100%{transform:translate(0,0) rotate(0);}50%{transform:translate(-3%,2%) rotate(3deg);}}
+  .particles{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
+  .particle{position:absolute;width:3px;height:3px;background:var(--gold);border-radius:50%;box-shadow:0 0 8px var(--gold);opacity:0;animation:floatParticle linear infinite;}
+  @keyframes floatParticle{0%{transform:translateY(100vh) scale(0);opacity:0;}10%{opacity:0.6;}90%{opacity:0.6;}100%{transform:translateY(-10vh) scale(1.5);opacity:0;}}
+  #app{position:relative;z-index:2;padding:14px 14px 110px;max-width:480px;margin:0 auto;min-height:100vh;}
+
+  .header{display:flex;align-items:center;gap:12px;padding:14px 16px;
+    background:linear-gradient(135deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02));
+    backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
+    border:1px solid var(--border);border-radius:24px;margin-bottom:18px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1);
+    position:relative;overflow:hidden;}
+  .header::after{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,215,0,0.1),transparent);
+    animation:shine 4s ease-in-out infinite;}
+  @keyframes shine{0%{left:-100%;}50%,100%{left:100%;}}
+  .avatar{width:52px;height:52px;border-radius:16px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-2));
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;font-weight:800;color:#000;
+    box-shadow:0 6px 20px rgba(255,215,0,0.45);object-fit:cover;
+    border:2px solid rgba(255,215,0,0.5);flex-shrink:0;}
+  .user-info{flex:1;min-width:0;}
+  .user-name{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px;}
+  .admin-crown{font-size:14px;filter:drop-shadow(0 0 8px rgba(255,215,0,0.9));}
+  .user-handle{font-size:12px;color:var(--text-dim);margin-top:3px;}
+  .user-id{font-size:10px;color:var(--text-dim);font-family:"SF Mono",monospace;
+    background:rgba(255,255,255,0.05);padding:3px 8px;border-radius:8px;
+    margin-top:4px;display:inline-block;cursor:pointer;border:1px solid rgba(255,255,255,0.08);}
+
+  .balance-card{text-align:center;padding:26px 20px;
+    background:linear-gradient(160deg,rgba(255,215,0,0.14),rgba(255,170,0,0.04));
+    border:1px solid var(--border-2);border-radius:28px;margin-bottom:18px;
+    position:relative;overflow:hidden;
+    box-shadow:0 10px 50px rgba(255,215,0,0.18),inset 0 1px 0 rgba(255,255,255,0.15);}
+  .balance-card::after{content:"";position:absolute;top:-50%;right:-50%;width:200%;height:200%;
+    background:conic-gradient(from 0deg,transparent,rgba(255,215,0,0.12),transparent);
+    animation:rotate 8s linear infinite;pointer-events:none;}
+  @keyframes rotate{to{transform:rotate(360deg);}}
+  .balance-label{font-size:11px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;position:relative;font-weight:600;}
+  .balance-value{font-size:48px;font-weight:900;
+    background:linear-gradient(180deg,#fff5b8 0%,var(--gold) 40%,var(--gold-3) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    line-height:1;position:relative;letter-spacing:-2px;text-shadow:0 0 60px rgba(255,215,0,0.5);}
+  .balance-sub{font-size:13px;color:var(--text-dim);margin-top:12px;position:relative;}
+  .balance-sub b{color:var(--gold);}
+
+  .progress-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:8px;font-weight:700;}
+  .progress-row b{color:var(--gold);font-size:14px;}
+  .progress-bar{height:12px;background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;margin-bottom:18px;border:1px solid rgba(255,255,255,0.06);}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#ff8800,var(--gold-2),var(--gold));border-radius:12px;transition:width 0.4s cubic-bezier(0.4,0,0.2,1);box-shadow:0 0 24px rgba(255,215,0,0.7);position:relative;overflow:hidden;}
+  .progress-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent);animation:energyShine 2s linear infinite;}
+  @keyframes energyShine{0%{transform:translateX(-100%);}100%{transform:translateX(200%);}}
+
+  .btn{border:none;border-radius:16px;padding:15px 22px;font-size:15px;font-weight:700;
+    cursor:pointer;font-family:inherit;transition:transform 0.15s,box-shadow 0.2s;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    position:relative;overflow:hidden;}
+  .btn::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transform:translateX(-100%);transition:transform 0.6s;}
+  .btn:active::before{transform:translateX(100%);}
+  .btn:active{transform:scale(0.97);}
+  .btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#000;box-shadow:0 8px 28px rgba(255,215,0,0.4);width:100%;}
+  .btn-ghost{background:var(--glass);color:var(--text);border:1px solid var(--border);width:100%;backdrop-filter:blur(20px);}
+  .btn-purple{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff;box-shadow:0 8px 28px rgba(168,85,247,0.4);width:100%;}
+  .btn-red{background:linear-gradient(135deg,#ff5252,#d32f2f);color:#fff;box-shadow:0 8px 28px rgba(255,82,82,0.4);}
+  .btn-green{background:linear-gradient(135deg,#00e676,#00a152);color:#000;box-shadow:0 8px 28px rgba(0,230,118,0.4);}
+  .btn-sm{padding:10px 14px;font-size:13px;border-radius:12px;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;filter:grayscale(0.5);}
+
+  .section-title{font-size:15px;font-weight:800;margin:22px 0 12px;display:flex;align-items:center;gap:8px;}
+  .section-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border-2),transparent);margin-inline-start:8px;}
+
+  .ad-big-card{padding:22px;text-align:center;
+    background:linear-gradient(160deg,rgba(168,85,247,0.15),rgba(59,130,246,0.08));
+    border:1px solid rgba(168,85,247,0.3);border-radius:26px;margin-bottom:18px;position:relative;overflow:hidden;}
+  .ad-icon{font-size:70px;margin-bottom:12px;filter:drop-shadow(0 0 30px rgba(255,215,0,0.5));animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+  .ad-title{font-size:20px;font-weight:900;margin-bottom:6px;}
+  .ad-desc{font-size:13px;color:var(--text-dim);margin-bottom:16px;}
+  .ad-reward-pill{display:inline-block;padding:8px 20px;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#000;font-weight:900;font-size:16px;border-radius:14px;box-shadow:0 4px 20px rgba(255,215,0,0.5);margin-bottom:16px;}
+
+  .ad-row{display:flex;align-items:center;gap:12px;padding:14px;
+    background:linear-gradient(160deg,var(--glass-2),var(--glass));
+    border:1px solid var(--border);border-radius:18px;margin-bottom:10px;}
+  .ad-row-icon{font-size:26px;width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:rgba(255,215,0,0.08);border:1px solid var(--border);border-radius:14px;flex-shrink:0;}
+  .ad-row-body{flex:1;min-width:0;}
+  .ad-row-title{font-size:14px;font-weight:700;}
+  .ad-row-desc{font-size:12px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ad-row-reward{padding:8px 14px;border-radius:12px;font-weight:800;font-size:13px;background:rgba(0,230,118,0.15);color:var(--green);border:1px solid rgba(0,230,118,0.35);white-space:nowrap;cursor:pointer;}
+
+  .ad-overlay{position:fixed;inset:0;z-index:9998;background:rgba(5,5,15,0.98);backdrop-filter:blur(20px);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+  .ad-overlay.active{display:flex;}
+  .ad-timer-circle{position:relative;width:160px;height:160px;margin-bottom:24px;}
+  .ad-timer-circle svg{transform:rotate(-90deg);}
+  .ad-timer-circle circle{fill:none;stroke-width:8;}
+  .ad-timer-bg{stroke:rgba(255,255,255,0.08);}
+  .ad-timer-fg{stroke:var(--gold);stroke-linecap:round;transition:stroke-dashoffset 1s linear;filter:drop-shadow(0 0 8px var(--gold));}
+  .ad-timer-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:900;background:linear-gradient(180deg,#fff5b8,var(--gold-3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .ad-overlay-title{font-size:20px;font-weight:800;margin-bottom:8px;}
+  .ad-overlay-desc{font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:24px;max-width:320px;}
+  .ad-overlay-btn{max-width:320px;width:100%;}
+  .ad-video{max-width:100%;max-height:55vh;border-radius:20px;margin-bottom:16px;box-shadow:0 12px 40px rgba(0,0,0,0.6);}
+
+  .task{display:flex;align-items:center;gap:14px;padding:14px;background:linear-gradient(160deg,var(--glass-2),var(--glass));border:1px solid var(--border);border-radius:20px;margin-bottom:10px;}
+  .task-icon{font-size:26px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(255,170,0,0.05));border:1px solid var(--border);border-radius:14px;flex-shrink:0;}
+  .task-body{flex:1;min-width:0;}
+  .task-title{font-size:14px;font-weight:700;}
+  .task-desc{font-size:12px;color:var(--text-dim);margin-top:3px;}
+  .task-reward{font-size:13px;font-weight:800;color:var(--gold);background:rgba(255,215,0,0.1);padding:8px 14px;border-radius:14px;border:1px solid var(--border);white-space:nowrap;cursor:pointer;}
+  .task-reward.done{background:rgba(0,230,118,0.15);color:var(--green);border-color:rgba(0,230,118,0.35);cursor:default;}
+
+  .daily-card{padding:20px;display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(59,130,246,0.1));border:1px solid rgba(168,85,247,0.3);border-radius:22px;margin-bottom:16px;}
+  .daily-card.claimed{background:linear-gradient(135deg,rgba(0,230,118,0.12),rgba(0,230,118,0.04));border-color:rgba(0,230,118,0.3);}
+  .daily-icon{font-size:42px;filter:drop-shadow(0 0 16px rgba(168,85,247,0.6));}
+  .daily-body{flex:1;}
+  .daily-title{font-size:15px;font-weight:800;margin-bottom:4px;}
+  .daily-desc{font-size:12px;color:var(--text-dim);}
+  .daily-btn{padding:12px 20px;border-radius:14px;background:linear-gradient(135deg,var(--purple),#7c3aed);border:none;color:#fff;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;box-shadow:0 6px 20px rgba(168,85,247,0.4);white-space:nowrap;}
+  .daily-btn:disabled{background:rgba(0,230,118,0.2);color:var(--green);box-shadow:none;cursor:not-allowed;}
+
+  .lb-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--glass);border:1px solid var(--border);border-radius:16px;margin-bottom:8px;}
+  .lb-row.me{background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,170,0,0.06));border-color:var(--border-2);}
+  .lb-rank{font-size:15px;font-weight:900;width:32px;text-align:center;flex-shrink:0;}
+  .lb-rank.g1{color:#ffd700;}.lb-rank.g2{color:#c0c0c0;}.lb-rank.g3{color:#cd7f32;}
+  .lb-avatar{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold-2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#000;object-fit:cover;flex-shrink:0;}
+  .lb-info{flex:1;min-width:0;}
+  .lb-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lb-handle{font-size:11px;color:var(--text-dim);}
+  .lb-score{font-size:13px;font-weight:800;color:var(--gold);white-space:nowrap;}
+
+  .profile-hero{text-align:center;padding:30px 20px 24px;background:linear-gradient(160deg,rgba(255,215,0,0.12),rgba(168,85,247,0.06));border:1px solid var(--border-2);border-radius:28px;margin-bottom:18px;}
+  .profile-avatar{width:100px;height:100px;border-radius:28px;background:linear-gradient(135deg,var(--gold),var(--gold-2));display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:900;color:#000;object-fit:cover;box-shadow:0 12px 40px rgba(255,215,0,0.5);border:3px solid rgba(255,215,0,0.6);margin:0 auto 14px;}
+  .profile-name{font-size:22px;font-weight:900;margin-bottom:4px;}
+  .profile-handle{font-size:13px;color:var(--text-dim);margin-bottom:10px;}
+  .id-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:12px;font-family:"SF Mono",monospace;font-size:12px;color:var(--text-dim);cursor:pointer;}
+
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .stat-card{padding:16px;text-align:center;background:linear-gradient(160deg,var(--glass-2),var(--glass));border:1px solid var(--border);border-radius:18px;}
+  .stat-icon{font-size:22px;margin-bottom:6px;}
+  .stat-value{font-size:20px;font-weight:900;color:var(--gold);text-shadow:0 0 12px rgba(255,215,0,0.4);}
+  .stat-label{font-size:11px;color:var(--text-dim);margin-top:3px;font-weight:600;}
+
+  .ref-card{padding:20px;text-align:center;background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(168,85,247,0.08));border:1px solid rgba(59,130,246,0.3);border-radius:22px;margin-bottom:16px;}
+  .ref-link{display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:14px;margin-top:14px;font-family:"SF Mono",monospace;font-size:11px;color:var(--text);direction:ltr;overflow:hidden;cursor:pointer;}
+  .ref-link span:first-child{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+
+  .input{width:100%;padding:16px 18px;background:var(--glass);border:1px solid var(--border);border-radius:16px;color:var(--text);font-size:14px;font-family:inherit;direction:ltr;text-align:left;margin-bottom:12px;transition:all 0.2s;}
+  .input::placeholder{color:var(--text-dim);}
+  .input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,215,0,0.15);background:var(--glass-2);}
+  .input-rtl{direction:rtl;text-align:right;}
+  .select{width:100%;padding:16px 18px;background:var(--glass);border:1px solid var(--border);border-radius:16px;color:var(--text);font-size:14px;font-family:inherit;margin-bottom:12px;}
+  .select:focus{outline:none;border-color:var(--gold);}
+  .select option{background:#14142b;color:#fff;}
+  .label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;font-weight:600;padding-inline-start:4px;}
+
+  .info-card{padding:18px;margin-bottom:12px;background:linear-gradient(160deg,var(--glass-2),var(--glass));border:1px solid var(--border);border-radius:20px;}
+  .info-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+  .info-row:last-child{border-bottom:none;padding-bottom:0;}
+  .info-row:first-child{padding-top:0;}
+  .info-label{color:var(--text-dim);font-weight:600;}
+  .info-value{font-weight:800;}
+  .info-value.gold{color:var(--gold);}
+
+  .country-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+  .country-btn{padding:14px 8px;text-align:center;background:var(--glass);border:1px solid var(--border);border-radius:16px;cursor:pointer;transition:all 0.2s;font-family:inherit;color:var(--text);}
+  .country-btn.active{background:linear-gradient(135deg,rgba(255,215,0,0.18),rgba(255,170,0,0.08));border-color:var(--gold);box-shadow:0 0 20px rgba(255,215,0,0.3);}
+  .country-flag{font-size:24px;margin-bottom:4px;}
+  .country-name{font-size:11px;font-weight:700;}
+
+  .method-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .method-btn{padding:14px 16px;text-align:right;background:var(--glass);border:1px solid var(--border);border-radius:14px;cursor:pointer;font-family:inherit;color:var(--text);font-size:14px;font-weight:700;display:flex;align-items:center;gap:10px;}
+  .method-btn.active{background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,170,0,0.06));border-color:var(--gold);}
+
+  .wd-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--glass);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;font-size:13px;}
+  .wd-status{font-size:11px;font-weight:800;padding:4px 10px;border-radius:10px;}
+  .wd-status.pending{background:rgba(255,170,0,0.15);color:var(--gold);}
+  .wd-status.approved{background:rgba(0,230,118,0.15);color:var(--green);}
+  .wd-status.rejected{background:rgba(255,82,82,0.15);color:var(--red);}
+
+  .adv-hero{padding:24px;text-align:center;background:linear-gradient(160deg,rgba(255,215,0,0.15),rgba(168,85,247,0.08));border:1px solid var(--border-2);border-radius:26px;margin-bottom:18px;}
+  .adv-hero-icon{font-size:54px;margin-bottom:10px;filter:drop-shadow(0 0 20px rgba(255,215,0,0.6));}
+  .adv-hero-title{font-size:20px;font-weight:900;margin-bottom:6px;}
+  .adv-hero-desc{font-size:13px;color:var(--text-dim);line-height:1.6;}
+
+  .admin-header{padding:18px;text-align:center;background:linear-gradient(160deg,rgba(255,215,0,0.18),rgba(168,85,247,0.1));border:1px solid var(--border-2);border-radius:24px;margin-bottom:18px;position:relative;overflow:hidden;}
+  .admin-header::before{content:"";position:absolute;top:-50%;right:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent,rgba(255,215,0,0.15),transparent);animation:rotate 10s linear infinite;pointer-events:none;}
+  .admin-crown-icon{font-size:48px;margin-bottom:8px;filter:drop-shadow(0 0 20px rgba(255,215,0,0.7));position:relative;}
+  .admin-title{font-size:20px;font-weight:900;color:var(--gold);position:relative;}
+  .admin-subtitle{font-size:12px;color:var(--text-dim);margin-top:4px;position:relative;}
+
+  .admin-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;scrollbar-width:none;}
+  .admin-tabs::-webkit-scrollbar{display:none;}
+  .admin-tab{padding:10px 16px;background:var(--glass);border:1px solid var(--border);border-radius:14px;color:var(--text-dim);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all 0.2s;}
+  .admin-tab.active{background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,170,0,0.08));border-color:var(--gold);color:var(--gold);}
+
+  .admin-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .admin-stat{padding:16px;text-align:center;background:linear-gradient(160deg,var(--glass-2),var(--glass));border:1px solid var(--border);border-radius:18px;}
+  .admin-stat b{display:block;font-size:22px;color:var(--gold);font-weight:900;}
+  .admin-stat span{font-size:11px;color:var(--text-dim);margin-top:4px;display:block;}
+
+  .admin-item{padding:14px;background:var(--glass);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;}
+  .admin-item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
+  .admin-item-title{font-size:14px;font-weight:800;}
+  .admin-item-meta{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .admin-item-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .admin-item-actions .btn{padding:8px 14px;font-size:12px;border-radius:10px;width:auto;}
+
+  .status-pill{display:inline-block;padding:3px 10px;border-radius:8px;font-size:10px;font-weight:800;white-space:nowrap;}
+  .status-pill.green{background:rgba(0,230,118,0.15);color:var(--green);}
+  .status-pill.red{background:rgba(255,82,82,0.15);color:var(--red);}
+  .status-pill.orange{background:rgba(255,170,0,0.15);color:var(--gold);}
+
+  .nav{position:fixed;bottom:14px;left:14px;right:14px;max-width:452px;margin:0 auto;display:flex;padding:8px;background:rgba(12,12,28,0.85);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border:1px solid var(--border);border-radius:26px;box-shadow:0 16px 50px rgba(0,0,0,0.7);z-index:100;}
+  .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;background:none;border:none;color:var(--text-dim);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;border-radius:18px;transition:all 0.25s;}
+  .nav-btn .icon{font-size:20px;transition:transform 0.25s;filter:grayscale(0.6) opacity(0.7);}
+  .nav-btn.active{color:var(--gold);background:rgba(255,215,0,0.1);}
+  .nav-btn.active .icon{transform:scale(1.15);filter:drop-shadow(0 0 10px rgba(255,215,0,0.6));}
+  .nav-btn.admin-nav{color:#ffd700;}
+  .nav-btn.admin-nav .icon{filter:none;}
+
+  .tab{display:none;}
+  .tab.active{display:block;animation:fadeSlide 0.35s cubic-bezier(0.4,0,0.2,1);}
+  @keyframes fadeSlide{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+  .toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(140px);background:linear-gradient(135deg,rgba(255,215,0,0.98),rgba(255,170,0,0.98));color:#000;padding:14px 26px;border-radius:16px;font-weight:800;font-size:14px;z-index:1000;opacity:0;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);box-shadow:0 16px 50px rgba(255,215,0,0.5);max-width:90vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.error{background:linear-gradient(135deg,#ff5252,#d32f2f);color:#fff;}
+  .toast.success{background:linear-gradient(135deg,#00e676,#00a152);color:#000;}
+
+  .modal{position:fixed;inset:0;z-index:9999;background:rgba(5,5,15,0.9);backdrop-filter:blur(20px);display:none;align-items:center;justify-content:center;padding:20px;}
+  .modal.active{display:flex;}
+  .modal-box{background:linear-gradient(160deg,#14142b,#0a0a1a);border:1px solid var(--border-2);border-radius:24px;padding:22px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto;}
+  .modal-title{font-size:18px;font-weight:900;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .modal-actions{display:flex;gap:10px;margin-top:16px;}
+  .modal-actions .btn{flex:1;}
+
+  .loader{position:fixed;inset:0;z-index:99999;background:radial-gradient(circle at 50% 40%,#1a1a3a,#05050f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;transition:opacity 0.5s ease;}
+  .loader.hidden{opacity:0;pointer-events:none;}
+  .loader-logo{font-size:60px;filter:drop-shadow(0 0 30px rgba(255,215,0,0.7));animation:logoFloat 2s ease-in-out infinite;}
+  @keyframes logoFloat{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-12px) scale(1.08);}}
+  .loader-spinner{width:50px;height:50px;border:3px solid rgba(255,215,0,0.12);border-top-color:var(--gold);border-radius:50%;animation:spin 0.9s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loader-text{color:var(--gold);font-size:13px;letter-spacing:4px;font-weight:800;text-transform:uppercase;}
+
+  .empty{text-align:center;padding:40px 20px;color:var(--text-dim);}
+  .empty-icon{font-size:48px;margin-bottom:12px;opacity:0.5;}
+  .empty-text{font-size:13px;}
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader">
+  <div class="loader-logo">💎</div>
+  <div class="loader-spinner"></div>
+  <div class="loader-text">ADVAULT PRO</div>
+</div>
+
+<div class="particles" id="particles"></div>
+
+<div id="app">
+
+  <div class="header">
+    <img class="avatar" id="headerAvatar" alt="" style="display:none" />
+    <div class="avatar" id="headerAvatarFallback">U</div>
+    <div class="user-info">
+      <div class="user-name">
+        <span id="headerNameText">User</span>
+        <span class="admin-crown" id="adminCrown" style="display:none">👑</span>
+      </div>
+      <div class="user-handle" id="headerHandle">@user</div>
+      <div class="user-id" id="headerId" onclick="copyId()">🆔 —</div>
+    </div>
+  </div>
+
+  <!-- ============ TAB HOME ============ -->
+  <div class="tab active" id="tab-home">
+    <div class="balance-card">
+      <div class="balance-label">رصيدك الحالي</div>
+      <div class="balance-value" id="balance">$0.00</div>
+      <div class="balance-sub">إجمالي الأرباح: <b id="totalEarned">$0.00</b></div>
+    </div>
+
+    <div class="progress-row">
+      <span>👁️ إعلانات اليوم</span>
+      <b><span id="adsToday">0</span> / <span id="dailyLimit">10</span></b>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="adsProgress" style="width:0%"></div></div>
+
+    <div class="ad-big-card" id="adBigCard" style="display:none">
+      <div class="ad-icon">🎬</div>
+      <div class="ad-title" id="adBigTitle">—</div>
+      <div class="ad-desc" id="adBigDesc">—</div>
+      <div class="ad-reward-pill" id="adBigReward">+$0.20</div>
+      <button class="btn btn-gold" onclick="startWatchingCurrent()">👁️ شاهد الآن واربح</button>
+    </div>
+
+    <button class="btn btn-gold" id="startBtn" onclick="showNextAd()">🎬 ابدأ مشاهدة الإعلان</button>
+
+    <div class="section-title">📺 إعلانات متاحة</div>
+    <div id="adsList"></div>
+  </div>
+
+  <!-- ============ TAB TASKS ============ -->
+  <div class="tab" id="tab-tasks">
+    <div class="daily-card" id="dailyCard">
+      <div class="daily-icon">🎁</div>
+      <div class="daily-body">
+        <div class="daily-title">المكافأة اليومية</div>
+        <div class="daily-desc" id="dailyDesc">احصل على مكافأتك</div>
+      </div>
+      <button class="daily-btn" id="dailyBtn" onclick="claimDaily()">استلام</button>
+    </div>
+    <div class="section-title">📋 المهام</div>
+    <div id="tasksList"></div>
+  </div>
+
+  <!-- ============ TAB LEADERBOARD ============ -->
+  <div class="tab" id="tab-leaderboard">
+    <div class="section-title">🏆 أعلى الرابحين</div>
+    <div id="leaderboardList"></div>
+  </div>
+
+  <!-- ============ TAB WALLET ============ -->
+  <div class="tab" id="tab-wallet">
+    <div class="info-card">
+      <div class="info-row"><span class="info-label">الرصيد المتاح</span><span class="info-value gold" id="walletBalance">$0.00</span></div>
+      <div class="info-row"><span class="info-label">إجمالي الأرباح</span><span class="info-value" id="walletTotal">$0.00</span></div>
+      <div class="info-row"><span class="info-label">حد السحب الأدنى</span><span class="info-value">$<span id="minWithdraw">10.00</span></span></div>
+    </div>
+
+    <div class="section-title">🌍 اختر دولتك</div>
+    <div class="country-grid" id="countryGrid"></div>
+
+    <div id="methodSection" style="display:none">
+      <div class="section-title">💳 طريقة السحب</div>
+      <div class="method-list" id="methodList"></div>
+
+      <div class="section-title">📝 بيانات الاستلام</div>
+      <div id="fieldsContainer"></div>
+      <button class="btn btn-ghost" onclick="saveWithdrawalSetup()">💾 حفظ بيانات السحب</button>
+    </div>
+
+    <div class="section-title">💸 طلب سحب</div>
+    <input class="input" id="withdrawAmount" type="number" step="0.01" placeholder="المبلغ بالدولار" />
+    <button class="btn btn-gold" onclick="withdraw()">💸 إرسال طلب السحب</button>
+
+    <div class="section-title">📜 آخر الطلبات</div>
+    <div id="withdrawalsList"></div>
+  </div>
+
+  <!-- ============ TAB PROFILE ============ -->
+  <div class="tab" id="tab-profile">
+    <div class="profile-hero">
+      <img class="profile-avatar" id="profileAvatar" style="display:none" alt="" />
+      <div class="profile-avatar" id="profileAvatarFallback">U</div>
+      <div class="profile-name" id="profileName">User</div>
+      <div class="profile-handle" id="profileHandle">@user</div>
+      <div class="id-pill" id="profileId" onclick="copyId()">🆔 <span>—</span></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value" id="statBalance">$0.00</div><div class="stat-label">الرصيد</div></div>
+      <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-value" id="statTotal">$0.00</div><div class="stat-label">إجمالي الأرباح</div></div>
+      <div class="stat-card"><div class="stat-icon">👁️</div><div class="stat-value" id="statAds">0</div><div class="stat-label">إعلانات</div></div>
+      <div class="stat-card"><div class="stat-icon">🤝</div><div class="stat-value" id="statRefs">0</div><div class="stat-label">إحالات</div></div>
+    </div>
+
+    <div class="section-title">🤝 رابط الإحالة</div>
+    <div class="ref-card">
+      <div style="font-size:34px;margin-bottom:8px;">🎯</div>
+      <div style="font-weight:800;margin-bottom:4px;">اربح $0.50 لكل صديق</div>
+      <div class="ref-link" onclick="copyRef()"><span id="refLinkText">—</span><span>📋</span></div>
+    </div>
+
+    <div class="section-title">📣 أعلن معنا</div>
+    <button class="btn btn-purple" onclick="switchTab('advertise')">💼 اطلب إعلان مدفوع</button>
+  </div>
+
+  <!-- ============ TAB ADVERTISE ============ -->
+  <div class="tab" id="tab-advertise">
+    <div class="adv-hero">
+      <div class="adv-hero-icon">📣</div>
+      <div class="adv-hero-title">أعلن على منصتنا</div>
+      <div class="adv-hero-desc">اوصل لآلاف المستخدمين النشطين يوميًا</div>
+    </div>
+
+    <div class="section-title">🎬 الطريقة الأسرع</div>
+    <button class="btn btn-gold" onclick="sendVideoToBot()">📤 أرسل فيديو الإعلان للبوت</button>
+    <div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:10px;line-height:1.6;">
+      سيُفتح شات البوت — أرسل الفيديو مع تعليق:<br>
+      <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:6px;">العنوان | رابط أو رقم تواصل</code>
+    </div>
+
+    <div class="section-title">📝 أو املأ النموذج</div>
+    <label class="label">اسم النشاط *</label>
+    <input class="input input-rtl" id="advBizName" placeholder="اسم شركتك" />
+    <label class="label">وسيلة التواصل *</label>
+    <input class="input" id="advContact" placeholder="@username أو email" />
+    <label class="label">عنوان الإعلان *</label>
+    <input class="input input-rtl" id="advTitle" placeholder="عنوان جذاب" />
+    <label class="label">الرابط (اختياري)</label>
+    <input class="input" id="advUrl" placeholder="https://..." />
+    <label class="label">وصف</label>
+    <input class="input input-rtl" id="advDesc" placeholder="وصف مختصر" />
+    <button class="btn btn-gold" onclick="submitAdRequest()">📤 إرسال الطلب</button>
+  </div>
+
+  <!-- ============ TAB ADMIN (hidden) ============ -->
+  <div class="tab" id="tab-admin">
+    <div class="admin-header">
+      <div class="admin-crown-icon">👑</div>
+      <div class="admin-title">لوحة التحكم</div>
+      <div class="admin-subtitle">تحكم كامل بالمنصة</div>
+    </div>
+
+    <div class="admin-tabs" id="adminTabs">
+      <button class="admin-tab active" data-atab="stats">📊 الإحصائيات</button>
+      <button class="admin-tab" data-atab="ads">📢 الإعلانات</button>
+      <button class="admin-tab" data-atab="tasks">📋 المهام</button>
+      <button class="admin-tab" data-atab="wd">💸 السحوبات</button>
+      <button class="admin-tab" data-atab="req">📣 الطلبات</button>
+      <button class="admin-tab" data-atab="users">👥 المستخدمون</button>
+      <button class="admin-tab" data-atab="settings">⚙️ الإعدادات</button>
+      <button class="admin-tab" data-atab="broadcast">📢 بث</button>
+    </div>
+
+    <div id="adminContent"></div>
+  </div>
+
+</div>
+
+<!-- ============ OVERLAY ============ -->
+<div class="ad-overlay" id="adOverlay">
+  <div id="videoContainer"></div>
+  <div class="ad-timer-circle" id="timerWrap">
+    <svg width="160" height="160">
+      <circle class="ad-timer-bg" cx="80" cy="80" r="70"></circle>
+      <circle class="ad-timer-fg" id="timerCircle" cx="80" cy="80" r="70" stroke-dasharray="439.8" stroke-dashoffset="0"></circle>
+    </svg>
+    <div class="ad-timer-text" id="timerText">15</div>
+  </div>
+  <div class="ad-overlay-title" id="overlayTitle">جارٍ المشاهدة...</div>
+  <div class="ad-overlay-desc" id="overlayDesc">لا تغلق الصفحة</div>
+  <button class="btn btn-gold ad-overlay-btn" id="overlayBtn" disabled>⏳ انتظر...</button>
+</div>
+
+<!-- ============ MODAL ============ -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">—</div>
+    <div id="modalBody"></div>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<!-- ============ NAV ============ -->
+<nav class="nav" id="mainNav">
+  <button class="nav-btn active" data-tab="home"><span class="icon">🏠</span><span>الرئيسية</span></button>
+  <button class="nav-btn" data-tab="tasks"><span class="icon">📋</span><span>المهام</span></button>
+  <button class="nav-btn" data-tab="leaderboard"><span class="icon">🏆</span><span>المتصدرون</span></button>
+  <button class="nav-btn" data-tab="wallet"><span class="icon">💰</span><span>المحفظة</span></button>
+  <button class="nav-btn" data-tab="profile"><span class="icon">👤</span><span>حسابي</span></button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready(); tg.expand();
+  try { tg.setHeaderColor("#05050f"); tg.setBackgroundColor("#05050f"); tg.enableClosingConfirmation(); } catch(e){}
+}
+
+const API = "";
+let user = null, ads = [], tasks = [], currentAd = null;
+let countries = {}, selectedCountry = "", selectedMethod = "";
+let currentTab = "home", currentAdminTab = "stats";
+
+(function(){
+  const c = document.getElementById("particles");
+  for (let i=0;i<18;i++){
+    const p = document.createElement("div");
+    p.className = "particle";
+    p.style.left = Math.random()*100 + "%";
+    p.style.animationDuration = (8+Math.random()*12) + "s";
+    p.style.animationDelay = (Math.random()*10) + "s";
+    p.style.opacity = 0.2 + Math.random()*0.5;
+    c.appendChild(p);
+  }
+})();
+
+async function api(path, opts={}) {
+  const res = await fetch(API + path, {
+    headers: {"Content-Type": "application/json"},
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.detail || "خطأ في الاتصال");
+  }
+  return res.json();
+}
+
+function toast(msg, type="") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = "toast" + (type ? " " + type : "");
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove("show"), 2400);
+}
+
+const money = n => "$" + Number(n||0).toFixed(2);
+
+function copyId(){
+  if (!user) return;
+  navigator.clipboard?.writeText(String(user.user_id));
+  toast("✅ تم نسخ ID: " + user.user_id, "success");
+}
+
+function copyRef(){
+  if (!user) return;
+  const bot = window.__BOT_USERNAME__ || "";
+  const link = bot ? `https://t.me/${bot}?start=ref_${user.user_id}` : `ref_${user.user_id}`;
+  navigator.clipboard?.writeText(link);
+  toast("✅ تم نسخ رابط الإحالة", "success");
+}
+
+function openModal(title, bodyHTML, actions){
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalBody").innerHTML = bodyHTML;
+  const actEl = document.getElementById("modalActions");
+  actEl.innerHTML = "";
+  (actions || []).forEach(a => {
+    const b = document.createElement("button");
+    b.className = "btn " + (a.class || "btn-ghost");
+    b.textContent = a.text;
+    b.onclick = () => { closeModal(); a.onClick && a.onClick(); };
+    actEl.appendChild(b);
+  });
+  document.getElementById("modal").classList.add("active");
+}
+
+function closeModal(){ document.getElementById("modal").classList.remove("active"); }
+document.getElementById("modal").onclick = (e)=>{ if (e.target.id === "modal") closeModal(); };
+
+// ==================================================
+// UPDATE UI
+// ==================================================
+function updateUI(u){
+  user = u;
+
+  document.getElementById("balance").textContent = money(u.balance);
+  document.getElementById("totalEarned").textContent = money(u.total_earned);
+  document.getElementById("adsToday").textContent = u.ads_today;
+  document.getElementById("dailyLimit").textContent = u.daily_limit;
+  const pct = Math.min(100, (u.ads_today / u.daily_limit) * 100);
+  document.getElementById("adsProgress").style.width = pct + "%";
+
+  document.getElementById("headerNameText").textContent = u.first_name;
+  document.getElementById("adminCrown").style.display = u.is_admin ? "inline" : "none";
+  document.getElementById("headerHandle").textContent = u.username ? "@" + u.username : "—";
+  document.getElementById("headerId").textContent = "🆔 " + u.user_id;
+
+  const hA = document.getElementById("headerAvatar");
+  const hF = document.getElementById("headerAvatarFallback");
+  const pA = document.getElementById("profileAvatar");
+  const pF = document.getElementById("profileAvatarFallback");
+  if (u.photo_url){
+    hA.src = u.photo_url; hA.style.display = "block"; hF.style.display = "none";
+    pA.src = u.photo_url; pA.style.display = "block"; pF.style.display = "none";
+  } else {
+    hA.style.display = "none"; hF.style.display = "flex";
+    pA.style.display = "none"; pF.style.display = "flex";
+    const ini = (u.first_name || "U").charAt(0).toUpperCase();
+    hF.textContent = ini; pF.textContent = ini;
+  }
+
+  document.getElementById("profileName").textContent = u.first_name;
+  document.getElementById("profileHandle").textContent = u.username ? "@" + u.username : "—";
+  document.getElementById("profileId").innerHTML = `🆔 <span>${u.user_id}</span>`;
+  document.getElementById("statBalance").textContent = money(u.balance);
+  document.getElementById("statTotal").textContent = money(u.total_earned);
+  document.getElementById("statAds").textContent = u.ads_watched;
+  document.getElementById("statRefs").textContent = u.referrals;
+
+  document.getElementById("walletBalance").textContent = money(u.balance);
+  document.getElementById("walletTotal").textContent = money(u.total_earned);
+  document.getElementById("minWithdraw").textContent = u.min_withdraw.toFixed(2);
+
+  const bot = window.__BOT_USERNAME__ || "";
+  document.getElementById("refLinkText").textContent = bot
+    ? `https://t.me/${bot}?start=ref_${u.user_id}`
+    : `ref_${u.user_id}`;
+
+  const startBtn = document.getElementById("startBtn");
+  if (u.ads_today >= u.daily_limit){
+    startBtn.disabled = true;
+    startBtn.textContent = "🎉 أكملت حد اليوم — عد غدًا";
+    document.getElementById("adBigCard").style.display = "none";
+  } else {
+    startBtn.disabled = false;
+    if (!currentAd) startBtn.textContent = "🎬 ابدأ مشاهدة الإعلان";
+  }
+
+  const now = Math.floor(Date.now()/1000);
+  const since = now - (u.last_daily || 0);
+  const day = 86400;
+  const dailyBtn = document.getElementById("dailyBtn");
+  const dailyCard = document.getElementById("dailyCard");
+  if (since >= day){
+    dailyBtn.disabled = false;
+    dailyBtn.textContent = "استلام";
+    dailyCard.classList.remove("claimed");
+  } else {
+    dailyBtn.disabled = true;
+    dailyBtn.textContent = Math.floor((day-since)/3600) + "س";
+    dailyCard.classList.add("claimed");
+  }
+
+  if (u.is_admin && !document.getElementById("adminNavBtn")){
+    const btn = document.createElement("button");
+    btn.id = "adminNavBtn";
+    btn.className = "nav-btn admin-nav";
+    btn.dataset.tab = "admin";
+    btn.innerHTML = '<span class="icon">👑</span><span>المشرف</span>';
+    btn.onclick = () => switchTab("admin");
+    document.getElementById("mainNav").appendChild(btn);
+  }
+}
+
+// ==================================================
+// AUTH
+// ==================================================
+async function init(){
+  try {
+    const initData = tg?.initData || "";
+    if (!initData){ toast("افتح من داخل تيليجرام", "error"); hideLoader(); return; }
+    user = await api("/api/auth", {method:"POST", body:JSON.stringify({initData})});
+    updateUI(user);
+    await Promise.all([loadAds(), loadTasks(), loadLeaderboard(), loadCountries(), loadWithdrawals()]);
+    hideLoader();
+  } catch(e){ toast(e.message, "error"); hideLoader(); }
+}
+
+function hideLoader(){
+  const l = document.getElementById("loader");
+  l.classList.add("hidden");
+  setTimeout(()=>l.remove(), 600);
+}
+
+// ==================================================
+// ADS
+// ==================================================
+async function loadAds(){
+  const data = await api("/api/ads?user_id=" + user.user_id);
+  ads = data.ads || [];
+  const list = document.getElementById("adsList");
+  if (!ads.length){
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📺</div><div class="empty-text">لا إعلانات متاحة</div></div>`;
+    return;
+  }
+  list.innerHTML = ads.map(a => `
+    <div class="ad-row">
+      <div class="ad-row-icon">${a.type === "video" ? "🎬" : "🔗"}</div>
+      <div class="ad-row-body">
+        <div class="ad-row-title">${a.title}</div>
+        <div class="ad-row-desc">${a.description || a.contact || ""}</div>
+      </div>
+      <div class="ad-row-reward" onclick="watchAd(${a.id})">+$${a.reward.toFixed(2)}</div>
+    </div>
+  `).join("");
+}
+
+function showNextAd(){
+  if (!ads.length){ toast("لا إعلانات", "error"); return; }
+  if (user.ads_today >= user.daily_limit){ toast("وصلت الحد اليومي", "error"); return; }
+  const a = ads[Math.floor(Math.random()*ads.length)];
+  currentAd = a;
+  document.getElementById("adBigTitle").textContent = a.title;
+  document.getElementById("adBigDesc").textContent = a.description || a.contact || "";
+  document.getElementById("adBigReward").textContent = "+$" + a.reward.toFixed(2);
+  document.getElementById("adBigCard").style.display = "block";
+  document.getElementById("startBtn").style.display = "none";
+}
+
+function startWatchingCurrent(){ if (currentAd) watchAd(currentAd.id); }
+
+async function watchAd(adId){
+  const ad = ads.find(x => x.id === adId);
+  if (!ad) return;
+  if (user.ads_today >= user.daily_limit){ toast("وصلت الحد اليومي", "error"); return; }
+
+  const overlay = document.getElementById("adOverlay");
+  const timerText = document.getElementById("timerText");
+  const timerCircle = document.getElementById("timerCircle");
+  const overlayBtn = document.getElementById("overlayBtn");
+  const overlayTitle = document.getElementById("overlayTitle");
+  const overlayDesc = document.getElementById("overlayDesc");
+  const videoContainer = document.getElementById("videoContainer");
+  const timerWrap = document.getElementById("timerWrap");
+
+  overlay.classList.add("active");
+  overlayBtn.disabled = true;
+  overlayBtn.textContent = "⏳ انتظر...";
+  overlayTitle.textContent = ad.title;
+  overlayDesc.textContent = ad.contact ? "📞 " + ad.contact : "لا تغلق الصفحة";
+
+  if (ad.type === "video" && ad.has_video){
+    videoContainer.innerHTML = `<video class="ad-video" src="/api/ad-video/${ad.id}" autoplay muted playsinline controls></video>`;
+    timerWrap.style.display = "none";
+  } else {
+    videoContainer.innerHTML = "";
+    timerWrap.style.display = "block";
+  }
+
+  if (ad.url && tg) tg.openLink(ad.url);
+
+  const total = ad.duration || 15;
+  let remaining = total;
+  const circ = 2 * Math.PI * 70;
+  timerCircle.style.strokeDasharray = circ;
+  timerCircle.style.strokeDashoffset = 0;
+  timerText.textContent = remaining;
+
+  const interval = setInterval(()=>{
+    remaining--;
+    if (ad.type !== "video") {
+      timerText.textContent = remaining;
+      const offset = ((total - remaining)/total) * circ;
+      timerCircle.style.strokeDashoffset = offset;
+    }
+    if (remaining <= 0){
+      clearInterval(interval);
+      overlayBtn.disabled = false;
+      overlayBtn.textContent = "✅ استلم مكافأتك";
+      overlayBtn.onclick = () => completeAd(ad.id);
+      overlayTitle.textContent = "🎉 اكتملت المشاهدة!";
+    }
+  }, 1000);
+}
+
+async function completeAd(adId){
+  document.getElementById("adOverlay").classList.remove("active");
+  document.getElementById("videoContainer").innerHTML = "";
+  try {
+    const res = await api(`/api/ads/${adId}/watch`, {
+      method:"POST",
+      body: JSON.stringify({user_id: user.user_id}),
+    });
+    user.balance = res.balance;
+    user.ads_today = res.ads_today;
+    user.ads_watched = (user.ads_watched||0) + 1;
+    user.total_earned = (user.total_earned||0) + res.reward;
+    updateUI(user);
+    toast(`🎉 +${money(res.reward)} — رصيدك ${money(res.balance)}`, "success");
+    currentAd = null;
+    document.getElementById("adBigCard").style.display = "none";
+    document.getElementById("startBtn").style.display = "block";
+    await loadAds();
+  } catch(e){ toast(e.message, "error"); }
+}
+
+// ==================================================
+// TASKS
+// ==================================================
+async function loadTasks(){
+  tasks = await api("/api/tasks?user_id=" + user.user_id);
+  const list = document.getElementById("tasksList");
+  if (!tasks.length){
+    list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">لا مهام</div></div>`;
+    return;
+  }
+  list.innerHTML = tasks.map(t => `
+    <div class="task">
+      <div class="task-icon">${t.icon || "🎯"}</div>
+      <div class="task-body">
+        <div class="task-title">${t.title}</div>
+        <div class="task-desc">${t.description || ""}</div>
+      </div>
+      <div class="task-reward ${t.completed ? "done" : ""}" onclick="claimTask(${t.id})">
+        ${t.completed ? "✔ تم" : (t.reward > 0 ? "+$" + t.reward.toFixed(2) : "🎁")}
+      </div>
+    </div>
+  `).join("");
+}
+
+async function claimTask(id){
+  const task = tasks.find(t => t.id === id);
+  if (!task || task.completed) return;
+  if (task.url && tg) tg.openLink(task.url);
+  try {
+    const res = await api(`/api/tasks/${id}/claim`, {
+      method:"POST",
+      body: JSON.stringify({user_id: user.user_id}),
+    });
+    if (res.reward > 0){
+      user.balance = res.balance;
+      updateUI(user);
+      toast(`🎉 +${money(res.reward)}`, "success");
+    } else {
+      toast("✅ تم إنجاز المهمة", "success");
+    }
+    await loadTasks();
+  } catch(e){ toast(e.message, "error"); }
+}
+
+// ==================================================
+// DAILY
+// ==================================================
+async function claimDaily(){
+  try {
+    const res = await api("/api/daily", {method:"POST", body:JSON.stringify({user_id:user.user_id})});
+    user.balance = res.balance;
+    user.streak = res.streak;
+    user.last_daily = Math.floor(Date.now()/1000);
+    updateUI(user);
+    toast(`🎁 +${money(res.reward)} | Streak ${res.streak}🔥`, "success");
+  } catch(e){ toast(e.message, "error"); }
+}
+
+// ==================================================
+// LEADERBOARD
+// ==================================================
+async function loadLeaderboard(){
+  const list = await api("/api/leaderboard");
+  const el = document.getElementById("leaderboardList");
+  if (!list.length){
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🏆</div><div class="empty-text">لا متصدرين</div></div>`;
+    return;
+  }
+  const medals = ["🥇","🥈","🥉"];
+  el.innerHTML = list.map((r,i) => {
+    const isMe = user && r.user_id === user.user_id;
+    const cls = i===0?"g1":i===1?"g2":i===2?"g3":"";
+    const ava = r.photo_url
+      ? `<img class="lb-avatar" src="${r.photo_url}" alt="" />`
+      : `<div class="lb-avatar">${(r.first_name||"U").charAt(0).toUpperCase()}</div>`;
+    return `
+      <div class="lb-row ${isMe?"me":""}">
+        <div class="lb-rank ${cls}">${medals[i] || (i+1)}</div>
+        ${ava}
+        <div class="lb-info">
+          <div class="lb-name">${r.first_name || "User"}</div>
+          <div class="lb-handle">${r.username ? "@"+r.username : "—"}</div>
+        </div>
+        <div class="lb-score">${money(r.total_earned)}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+// ==================================================
+// COUNTRIES & WITHDRAWAL
+// ==================================================
+async function loadCountries(){
+  countries = await api("/api/countries");
+  const grid = document.getElementById("countryGrid");
+  grid.innerHTML = Object.entries(countries).map(([code, c]) => `
+    <div class="country-btn ${selectedCountry===code?"active":""}" onclick="selectCountry('${code}')">
+      <div class="country-flag">${c.flag || "🌍"}</div>
+      <div class="country-name">${c.label || c.name}</div>
+    </div>
+  `).join("");
+  if (user?.country) selectCountry(user.country, true);
+}
+
+function selectCountry(code, silent){
+  selectedCountry = code;
+  document.querySelectorAll(".country-btn").forEach(b => b.classList.remove("active"));
+  const buttons = document.querySelectorAll(".country-btn");
+  Object.keys(countries).forEach((c,i) => {
+    if (c === code && buttons[i]) buttons[i].classList.add("active");
+  });
+
+  const methods = countries[code].methods;
+  const listEl = document.getElementById("methodList");
+  listEl.innerHTML = methods.map(m => `
+    <div class="method-btn ${selectedMethod===m.id?"active":""}" onclick="selectMethod('${m.id}')">
+      <span>${m.name}</span>
+    </div>
+  `).join("");
+  document.getElementById("methodSection").style.display = "block";
+
+  if (silent && user?.withdrawal_method) selectMethod(user.withdrawal_method, true);
+  else if (methods.length === 1) selectMethod(methods[0].id);
+}
+
+function selectMethod(id, silent){
+  selectedMethod = id;
+  document.querySelectorAll(".method-btn").forEach(b => b.classList.remove("active"));
+  const buttons = document.querySelectorAll(".method-btn");
+  const methods = countries[selectedCountry].methods;
+  methods.forEach((m,i) => {
+    if (m.id === id && buttons[i]) buttons[i].classList.add("active");
+  });
+  renderFields();
+}
+
+function renderFields(){
+  const container = document.getElementById("fieldsContainer");
+  const method = countries[selectedCountry]?.methods.find(m => m.id === selectedMethod);
+  if (!method){ container.innerHTML = ""; return; }
+  const saved = user?.withdrawal_fields || {};
+  container.innerHTML = method.fields.map(f => {
+    const val = saved[f.name] || "";
+    if (f.type === "select"){
+      return `
+        <label class="label">${f.label}${f.required?" *":""}</label>
+        <select class="select" id="field_${f.name}">
+          <option value="">— اختر —</option>
+          ${f.options.map(o => `<option value="${o.v}" ${val===o.v?"selected":""}>${o.l}</option>`).join("")}
+        </select>`;
+    }
+    return `
+      <label class="label">${f.label}${f.required?" *":""}</label>
+      <input class="input" id="field_${f.name}" type="${f.type||"text"}" value="${val}" placeholder="${f.placeholder||""}" />`;
+  }).join("");
+}
+
+async function saveWithdrawalSetup(){
+  const method = countries[selectedCountry]?.methods.find(m => m.id === selectedMethod);
+  if (!method){ toast("اختر طريقة", "error"); return; }
+  const fields = {};
+  for (const f of method.fields){
+    const el = document.getElementById("field_" + f.name);
+    const v = (el?.value || "").trim();
+    if (f.required && !v){ toast(`أكمل: ${f.label}`, "error"); return; }
+    fields[f.name] = v;
+  }
+  try {
+    await api("/api/withdrawal/setup", {
+      method:"POST",
+      body: JSON.stringify({
+        user_id: user.user_id,
+        country: selectedCountry,
+        method: selectedMethod,
+        fields,
+      }),
+    });
+    user.country = selectedCountry;
+    user.withdrawal_method = selectedMethod;
+    user.withdrawal_fields = fields;
+    toast("✅ تم حفظ بيانات السحب", "success");
+  } catch(e){ toast(e.message, "error"); }
+}
+
+async function withdraw(){
+  const amount = parseFloat(document.getElementById("withdrawAmount").value);
+  if (!amount || amount <= 0){ toast("أدخل مبلغًا", "error"); return; }
+  try {
+    const res = await api("/api/withdraw", {
+      method:"POST",
+      body: JSON.stringify({user_id: user.user_id, amount}),
+    });
+    user.balance = res.balance;
+    updateUI(user);
+    document.getElementById("withdrawAmount").value = "";
+    toast("✅ تم إرسال طلب السحب", "success");
+    await loadWithdrawals();
+  } catch(e){ toast(e.message, "error"); }
+}
+
+async function loadWithdrawals(){
+  const list = await api("/api/withdrawals?user_id=" + user.user_id);
+  const el = document.getElementById("withdrawalsList");
+  if (!list.length){
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📜</div><div class="empty-text">لا طلبات</div></div>`;
+    return;
+  }
+  const stMap = {pending:"⏳ معلق", approved:"✅ موافق", rejected:"❌ مرفوض"};
+  el.innerHTML = list.map(w => `
+    <div class="wd-row">
+      <div>
+        <div style="font-weight:800;">${money(w.amount)}</div>
+        <div style="font-size:11px;color:var(--text-dim);">${w.method_name || ""}</div>
+      </div>
+      <div class="wd-status ${w.status}">${stMap[w.status] || w.status}</div>
+    </div>
+  `).join("");
+}
+
+// ==================================================
+// ADVERTISE
+// ==================================================
+function sendVideoToBot(){
+  const bot = window.__BOT_USERNAME__ || "";
+  if (!bot){ toast("لم يتم ضبط اسم البوت", "error"); return; }
+  const url = `https://t.me/${bot}?start=ad_submit`;
+  if (tg) tg.openTelegramLink(url); else window.open(url, "_blank");
+}
+
+async function submitAdRequest(){
+  const data = {
+    user_id:       user.user_id,
+    business_name: document.getElementById("advBizName").value.trim(),
+    contact:       document.getElementById("advContact").value.trim(),
+    ad_title:      document.getElementById("advTitle").value.trim(),
+    ad_url:        document.getElementById("advUrl").value.trim(),
+    description:   document.getElementById("advDesc").value.trim(),
+  };
+  if (!data.business_name || !data.contact || !data.ad_title){
+    toast("أكمل الحقول المطلوبة", "error"); return;
+  }
+  try {
+    await api("/api/ad-request", {method:"POST", body:JSON.stringify(data)});
+    toast("✅ تم إرسال الطلب", "success");
+    ["advBizName","advContact","advTitle","advUrl","advDesc"].forEach(id => document.getElementById(id).value = "");
+    switchTab("home");
+  } catch(e){ toast(e.message, "error"); }
+}
+
+// ==================================================
+// TAB SWITCHER
+// ==================================================
+function switchTab(tab){
+  if (tab === currentTab) return;
+  currentTab = tab;
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  const el = document.getElementById("tab-" + tab);
+  if (el) el.classList.add("active");
+
+  if (tab === "tasks") loadTasks();
+  if (tab === "leaderboard") loadLeaderboard();
+  if (tab === "wallet"){ loadWithdrawals(); loadCountries(); }
+  if (tab === "admin") loadAdminTab(currentAdminTab);
+}
+
+document.querySelectorAll(".nav-btn").forEach(btn => {
+  btn.onclick = () => {
+    if (btn.dataset.tab === "admin" && !user?.is_admin){ toast("غير مصرح", "error"); return; }
+    switchTab(btn.dataset.tab);
+  };
+});
+
+// ==================================================
+// ADMIN PANEL
+// ==================================================
+document.querySelectorAll(".admin-tab").forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll(".admin-tab").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    currentAdminTab = t.dataset.atab;
+    loadAdminTab(currentAdminTab);
+  };
+});
+
+async function loadAdminTab(tab){
+  if (!user?.is_admin) return;
+  const c = document.getElementById("adminContent");
+  c.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">جارٍ التحميل...</div></div>';
+  try {
+    if (tab === "stats") await renderAdminStats(c);
+    else if (tab === "ads") await renderAdminAds(c);
+    else if (tab === "tasks") await renderAdminTasks(c);
+    else if (tab === "wd") await renderAdminWithdrawals(c);
+    else if (tab === "req") await renderAdminRequests(c);
+    else if (tab === "users") await renderAdminUsers(c);
+    else if (tab === "settings") await renderAdminSettings(c);
+    else if (tab === "broadcast") renderAdminBroadcast(c);
+  } catch(e){
+    c.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><div class="empty-text">${e.message}</div></div>`;
+  }
+}
+
+async function renderAdminStats(c){
+  const s = await api("/api/admin/stats?user_id=" + user.user_id);
+  c.innerHTML = `
+    <div class="admin-stat-grid">
+      <div class="admin-stat"><b>${s.users}</b><span>👥 المستخدمون</span></div>
+      <div class="admin-stat"><b>${s.ads}</b><span>📢 إعلانات نشطة</span></div>
+      <div class="admin-stat"><b>${s.views}</b><span>👁️ مشاهدات</span></div>
+      <div class="admin-stat"><b>${s.tasks}</b><span>📋 مهام</span></div>
+      <div class="admin-stat"><b>${s.pending_wd}</b><span>⏳ سحوبات معلقة</span></div>
+      <div class="admin-stat"><b>${s.pending_req}</b><span>📣 طلبات</span></div>
+      <div class="admin-stat" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,170,0,0.05));border-color:var(--border-2);">
+        <b style="font-size:28px;">$${s.paid.toFixed(2)}</b>
+        <span>💰 إجمالي المدفوع</span>
+      </div>
+    </div>
+  `;
+}
+
+async function renderAdminAds(c){
+  const ads = await api("/api/admin/ads?user_id=" + user.user_id);
+  const addBtn = `<button class="btn btn-gold btn-sm" onclick="adminAddAdModal()" style="width:100%;margin-bottom:12px;">➕ إضافة إعلان نصي</button>`;
+  if (!ads.length){
+    c.innerHTML = addBtn + `<div class="empty"><div class="empty-icon">📢</div><div class="empty-text">لا إعلانات</div></div>`;
+    return;
+  }
+  c.innerHTML = addBtn + ads.map(a => `
+    <div class="admin-item">
+      <div class="admin-item-head">
+        <div>
+          <div class="admin-item-title">${a.type==="video"?"🎬 ":"🔗 "}${a.title}</div>
+          <div class="admin-item-meta">#${a.id} • 👁️ ${a.views} • 💰 $${a.reward} • ⏱ ${a.duration}s • ${a.active?"🟢":"🔴"}</div>
+        </div>
+      </div>
+      <div class="admin-item-actions">
+        <button class="btn btn-ghost btn-sm" onclick="adminToggleAd(${a.id})">${a.active?"⏸️ إيقاف":"▶️ تشغيل"}</button>
+        <button class="btn btn-red btn-sm" onclick="adminDeleteAd(${a.id})">🗑️ حذف</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function adminAddAdModal(){
+  openModal("➕ إضافة إعلان", `
+    <label class="label">العنوان *</label>
+    <input class="input input-rtl" id="aTitle" placeholder="عنوان الإعلان" />
+    <label class="label">الوصف</label>
+    <input class="input input-rtl" id="aDesc" placeholder="وصف مختصر" />
+    <label class="label">الرابط</label>
+    <input class="input" id="aUrl" placeholder="https://..." />
+    <label class="label">المدة (ثواني)</label>
+    <input class="input" id="aDur" type="number" value="15" />
+  `, [
+    {text:"إلغاء", class:"btn-ghost"},
+    {text:"✅ إضافة", class:"btn-gold", onClick: async () => {
+      const title = document.getElementById("aTitle").value.trim();
+      if (!title){ toast("أدخل العنوان", "error"); return; }
+      try {
+        await api("/api/admin/ads", {method:"POST", body:JSON.stringify({
+          user_id: user.user_id, title,
+          description: document.getElementById("aDesc").value,
+          url: document.getElementById("aUrl").value,
+          duration: parseInt(document.getElementById("aDur").value) || 15,
+        })});
+        toast("✅ تمت الإضافة", "success");
+        loadAdminTab("ads");
+      } catch(e){ toast(e.message, "error"); }
+    }},
+  ]);
+}
+
+async function adminToggleAd(id){
+  try {
+    await api(`/api/admin/ads/${id}/toggle`, {method:"POST", body:JSON.stringify({user_id:user.user_id})});
+    toast("✅ تم التحديث", "success");
+    loadAdminTab("ads");
+  } catch(e){ toast(e.message, "error"); }
+}
+
+async function adminDeleteAd(id){
+  openModal("⚠️ تأكيد الحذف", "<p>هل تريد حذف هذا الإعلان؟</p>", [
+    {text:"إلغاء", class:"btn-ghost"},
+    {text:"🗑️ حذف", class:"btn-red", onClick: async () => {
+      try {
+        await api(`/api/admin/ads/${id}?user_id=${user.user_id}`, {method:"DELETE"});
+        toast("✅ تم الحذف", "success");
+        loadAdminTab("ads");
+      } catch(e){ toast(e.message, "error"); }
+    }},
+  ]);
+}
+
+async function renderAdminTasks(c){
+  const tasks = await api("/api/admin/tasks?user_id=" + user.user_id);
+  const addBtn = `<button class="btn btn-gold btn-sm" onclick="adminAddTaskModal()" style="width:100%;margin-bottom:12px;">➕ إضافة مهمة</button>`;
+  if (!tasks.length){
+    c.innerHTML = addBtn + `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">لا مهام</div></div>`;
+    return;
+  }
+  c.innerHTML = addBtn + tasks.map(t => `
+    <div class="admin-item">
+      <div class="admin-item-head">
+        <div>
+          <div class="admin-item-title">${t.icon||"🎯"} ${t.title}</div>
+          <div class="admin-item-meta">#${t.id} • 💰 $${t.reward} • ${t.active?"🟢":"🔴"}</div>
+        </div>
+      </div>
+      <div class="admin-item-actions">
+        <button class="btn btn-red btn-sm" onclick="adminDeleteTask(${t.id})">🗑️ حذف</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function adminAddTaskModal(){
+  openModal("➕ إضافة مهمة", `
+    <label class="label">العنوان *</label>
+    <input class="input input-rtl" id="tTitle" placeholder="عنوان المهمة" />
+    <label class="label">الوصف</label>
+    <input class="input input-rtl" id="tDesc" placeholder="وصف" />
+    <label class="label">المكافأة ($)</label>
+    <input class="input" id="tReward" type="number" step="0.01" value="0.10" />
+    <label class="label">الرابط</label>
+    <input class="input" id="tUrl" placeholder="https://..." />
+    <label class="label">الأيقونة</label>
+    <input class="input" id="tIcon" value="🎯" />
+  `, [
+    {text:"إلغاء", class:"btn-ghost"},
+    {text:"✅ إضافة", class:"btn-gold", onClick: async () => {
+      const title = document.getElementById("tTitle").value.trim();
+      if (!title){ toast("أدخل العنوان", "error"); return; }
+      try {
+        await api("/api/admin/tasks", {method:"POST", body:JSON.stringify({
+          user_id: user.user_id, title,
+          description: document.getElementById("tDesc").value,
+          reward: parseFloat(document.getElementById("tReward").value) || 0,
+          url: document.getElementById("tUrl").value,
+          icon: document.getElementById("tIcon").value || "🎯",
+        })});
+        toast("✅ تمت الإضافة", "success");
+        loadAdminTab("tasks");
+      } catch(e){ toast(e.message, "error"); }
+    }},
+  ]);
+}
+
+async function adminDeleteTask(id){
+  openModal("⚠️ تأكيد", "<p>حذف هذه المهمة؟</p>", [
+    {text:"إلغاء", class:"btn-ghost"},
+    {text:"🗑️ حذف", class:"btn-red", onClick: async () => {
+      try {
+        await api(`/api/admin/tasks/${id}?user_id=${user.user_id}`, {method:"DELETE"});
+        toast("✅ تم الحذف", "success");
+        loadAdminTab("tasks");
+      } catch(e){ toast(e.message, "error"); }
+    }},
+  ]);
+}
+
+async function renderAdminWithdrawals(c){
+  const wds = await api("/api/admin/withdrawals?user_id=" + user.user_id);
+  if (!wds.length){
+    c.innerHTML = `<div class="empty"><div class="empty-icon">💸</div><div class="empty-text">لا طلبات سحب</div></div>`;
+    return;
+  }
+  c.innerHTML = wds.map(w => {
+    const acc = w.account || {};
+    const accTxt = Object.entries(acc).map(([k,v]) => `${k}: ${v}`).join(" • ");
+    const pill = w.status==="pending" ? "orange" : w.status==="approved" ? "green" : "red";
+    const pillTxt = {pending:"⏳ معلق", approved:"✅ موافق", rejected:"❌ مرفوض"}[w.status] || w.status;
+    return `
+      <div class="admin-item">
+        <div class="admin-item-head">
+          <div>
+            <div class="admin-item-title">${w.first_name || "مستخدم"} — ${money(w.amount)}</div>
+            <div class="admin-item-meta">#${w.id} • ${w.method_name || ""} • ${new Date(w.created_at).toLocaleString("ar")}</div>
+          </div>
+          <span class="status-pill ${pill}">${pillTxt}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-dim);background:rgba(0,0,0,0.3);padding:10px;border-radius:12px;margin-top:8px;direction:ltr;text-align:left;font-family:monospace;word-break:break-all;">
+          ${accTxt || "—"}
+        </div>
+        ${w.status==="pending" ? `
+          <div class="admin-item-actions" style="margin-top:10px;">
+            <button class="btn btn-green btn-sm" onclick="adminApproveWd(${w.id})">✅ موافقة</button>
+            <button class="btn btn-red btn-sm" onclick="adminRejectWd(${w.id})">❌ رفض</button>
+          </div>` : ""}
+      </div>
+    `;
+  }).join("");
+}
+
+async function adminApproveWd(id){
+  try {
+    await api(`/api/admin/withdrawals/${id}/approve`, {method:"POST", body:JSON.stringify({user_id:user.user_id})});
+    toast("✅ تمت الموافقة", "success");
+    loadAdminTab("wd");
+  } catch(e){ toast(e.message, "error"); }
+}
+
+async function adminRejectWd(id){
+  openModal("⚠️ رفض السحب", "<p>سيُرجع المبلغ لرصيد المستخدم. متأكد؟</p>", [
+    {text:"إلغاء", class:"btn-ghost"},
+    {text:"❌ رفض", class:"btn-red", onClick: async () => {
+      try {
+        await api(`/api/admin/withdrawals/${id}/reject`, {method:"POST", body:JSON.stringify({user_id:user.user_id})});
+        toast("❌ تم الرفض", "success");
+        loadAdminTab("wd");
+      } catch(e){ toast(e.message, "error"); }
+    }},
+  ]);
+}
+
+async function renderAdminRequests(c){
+  const reqs = await api("/api/admin/requests?user_id=" + user.user_id);
+  if (!reqs.length){
+    c.innerHTML = `<div class="empty"><div class="empty-icon">📣</div><div class="empty-text">لا طلبات</div></div>`;
+    return;
+  }
+  c.innerHTML = reqs.map(r => `
+    <div class="admin-item">
+      <div class="admin-item-head">
+        <div>
+          <div class="admin-item-title">${r.video_file_id ? "🎬 " : "📄 "}${r.ad_title}</div>
+          <div class="admin-item-meta">🏢 ${r.business_name || "—"} • 📞 ${r.contact || "—"}</div>
+        </div>
+      </div>
+      ${r.ad_url ? `<div style="font-size:12px;color:var(--blue);margin-bottom:6px;direction:ltr;text-align:left;word-break:break-all;">${r.ad_url}</div>` : ""}
+      ${r.description ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">${r.description}</div>` : ""}
+      <div class="admin-item-actions">
+        <button class="btn btn-green btn-sm" onclick="adminApproveReq(${r.id})">✅ قبول</button>
+        <button class="btn btn-red btn-sm" onclick="adminRejectReq(${r.id})">❌ رفض</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function adminApproveReq(id){
+  try {
+    await api(`/api/admin/requests/${id}/approve`, {method:"POST", body:JSON.stringify({user_id:user.user_id})});
+    toast("✅ تمت الموافقة وأُضيف للإعلانات", "success");
+    loadAdminTab("req");
+  } catch(e){ toast(e.message, "error"); }
+}
+
+async function adminRejectReq(id){
+  try {
+    await api(`/api/admin/requests/${id}/reject`, {method:"POST", body:JSON.stringify({user_id:user.user_id})});
+    toast("❌ تم الرفض", "success");
+    loadAdminTab("req");
+  } catch(e){ toast(e.message, "error"); }
+}
+
+async function renderAdminUsers(c){
+  const users = await api("/api/admin/users?user_id=" + user.user_id);
+  c.innerHTML = `
+    <input class="input" placeholder="🔍 بحث (اسم/يوزر/ID)" oninput="adminSearchUsers(this.value)" style="margin-bottom:12px;" />
+    <div id="usersList">${renderUsersList(users)}</div>
+  `;
+}
+
+function renderUsersList(users){
+  if (!users.length) return `<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">لا نتائج</div></div>`;
+  return users.map(u => `
+    <div class="admin-item">
+      <div class="admin-item-head">
+        <div>
+          <div class="admin-item-title">${u.first_name || "User"} ${u.banned?"🚫":""}</div>
+          <div class="admin-item-meta">@${u.username || "—"} • ID: ${u.user_id} • 💰 $${(u.total_earned||0).toFixed(2)}</div>
+        </div>
+      </div>
+      <div class="admin-item-actions">
+        <button class="btn ${u.banned?"btn-green":"btn-red"} btn-sm" onclick="adminToggleBan(${u.user_id})">
+          ${u.banned?"🔓 رفع الحظر":"🚫 حظر"}
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
+
+let adminUsersTimeout;
+function adminSearchUsers(q){
+  clearTimeout(adminUsersTimeout);
+  adminUsersTimeout = setTimeout(async () => {
+    try {
+      const users = await api(`/api/admin/users?user_id=${user.user_id}&q=${encodeURIComponent(q)}`);
+      document.getElementById("usersList").innerHTML = renderUsersList(users);
+    } catch(e){ toast(e.message, "error"); }
+  }, 400);
+}
+
+async function adminToggleBan(uid){
+  try {
+    await api(`/api/admin/users/${uid}/toggle-ban`, {method:"POST", body:JSON.stringify({user_id:user.user_id})});
+    toast("✅ تم التحديث", "success");
+    loadAdminTab("users");
+  } catch(e){ toast(e.message, "error"); }
+}
+
+async function renderAdminSettings(c){
+  const s = await api("/api/admin/settings?user_id=" + user.user_id);
+  c.innerHTML = `
+    <label class="label">💰 مكافأة الإعلان ($)</label>
+    <input class="input" id="setAdReward" type="number" step="0.01" value="${s.ad_reward}" />
+    <label class="label">📊 الحد اليومي (عدد الإعلانات)</label>
+    <input class="input" id="setDailyLimit" type="number" value="${s.daily_limit}" />
+    <label class="label">💸 حد السحب الأدنى ($)</label>
+    <input class="input" id="setMinWithdraw" type="number" step="0.01" value="${s.min_withdraw}" />
+    <label class="label">🤝 مكافأة الإحالة ($)</label>
+    <input class="input" id="setReferralBonus" type="number" step="0.01" value="${s.referral_bonus}" />
+    <label class="label">🎁 المكافأة اليومية ($)</label>
+    <input class="input" id="setDailyBonus" type="number" step="0.01" value="${s.daily_bonus}" />
+    <button class="btn btn-gold" onclick="adminSaveSettings()" style="margin-top:12px;">💾 حفظ الإعدادات</button>
+  `;
+}
+
+async function adminSaveSettings(){
+  try {
+    await api("/api/admin/settings", {method:"POST", body:JSON.stringify({
+      user_id: user.user_id,
+      ad_reward: document.getElementById("setAdReward").value,
+      daily_limit: document.getElementById("setDailyLimit").value,
+      min_withdraw: document.getElementById("setMinWithdraw").value,
+      referral_bonus: document.getElementById("setReferralBonus").value,
+      daily_bonus: document.getElementById("setDailyBonus").value,
+    })});
+    toast("✅ تم حفظ الإعدادات", "success");
+    const me = await api("/api/me?user_id=" + user.user_id);
+    updateUI(me);
+  } catch(e){ toast(e.message, "error"); }
+}
+
+function renderAdminBroadcast(c){
+  c.innerHTML = `
+    <div class="info-card">
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.7;">
+        📢 سيتم إرسال رسالتك لجميع المستخدمين النشطين.
+      </div>
+    </div>
+    <textarea class="input input-rtl" id="bcText" rows="6" placeholder="نص الرسالة..." style="min-height:140px;font-family:inherit;direction:rtl;text-align:right;"></textarea>
+    <button class="btn btn-gold" onclick="adminSendBroadcast()">📢 إرسال للجميع</button>
+  `;
+}
+
+async function adminSendBroadcast(){
+  const text = document.getElementById("bcText").value.trim();
+  if (!text){ toast("أدخل نص", "error"); return; }
+  openModal("⚠️ تأكيد البث", "<p>إرسال الرسالة لجميع المستخدمين؟</p>", [
+    {text:"إلغاء", class:"btn-ghost"},
+    {text:"📢 إرسال", class:"btn-gold", onClick: async () => {
+      try {
+        const res = await api("/api/admin/broadcast", {method:"POST", body:JSON.stringify({
+          user_id: user.user_id, text,
+        })});
+        toast(`✅ أُرسلت لـ ${res.sent} مستخدم`, "success");
+        document.getElementById("bcText").value = "";
+      } catch(e){ toast(e.message, "error"); }
+    }},
+  ]);
+}
+
+// ==================================================
+// Refresh
+// ==================================================
+setInterval(async () => {
+  if (!user || document.hidden) return;
+  try {
+    const me = await api("/api/me?user_id=" + user.user_id);
+    updateUI(me);
+  } catch {}
+}, 15000);
+
+// Optional: Bot username for referral links
+window.__BOT_USERNAME__ = window.__BOT_USERNAME__ || "";
+
+init();
+</script>
+</body>
+</html>
