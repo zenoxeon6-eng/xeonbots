@@ -2,9 +2,10 @@
 ════════════════════════════════════════════════════════════════════════
 💎 AdVault Pro — Cashbackigfbot
 ════════════════════════════════════════════════════════════════════════
-- المالك فقط من يضيف الإعلانات والمهام (من لوحة التحكم أو بإرسال وسائط للبوت)
-- المستخدم يرى زر "تواصل معنا" لطلب إعلان
-- لوحة تحكم شاملة داخل التطبيق المصغر
+- المالك فقط من يضيف الإعلانات والمهام
+- زر تواصل مع @no_vi1
+- رسالة ترحيب فخمة مع معلومات المستخدم وزر الدخول
+- لا يوجد force-join
 ════════════════════════════════════════════════════════════════════════
 """
 
@@ -33,7 +34,7 @@ from telegram.ext import (
 BOT_TOKEN      = os.getenv("BOT_TOKEN",    "8992305691:AAHsC05CChVGUGHD3ZmS2huPWNPT2Qy65fo")
 WEBAPP_URL     = os.getenv("WEBAPP_URL",   "https://xeonbots.onrender.com/")
 BOT_USERNAME   = os.getenv("BOT_USERNAME","Cashbackigfbot").lstrip("@")
-ADMIN_CONTACT  = os.getenv("ADMIN_CONTACT", "Cashbackigfbot")
+ADMIN_CONTACT  = os.getenv("ADMIN_CONTACT", "no_vi1").lstrip("@")
 HOST           = os.getenv("HOST", "0.0.0.0")
 PORT           = int(os.getenv("PORT", "8000"))
 DB_PATH        = os.getenv("DB_PATH", "ads.db")
@@ -802,7 +803,7 @@ async def api_withdrawals(user_id: int):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📞 طلب تواصل (لطلب إعلان)
+# 📞 طلب تواصل
 # ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/contact-request")
 async def api_contact_request(req: Request):
@@ -1184,15 +1185,20 @@ async def adm_broadcast(req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🤖 أوامر البوت
+# 🤖 أوامر البوت — /start الفخم
 # ═══════════════════════════════════════════════════════════════════════
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     u = update.effective_user
+
     user_dict = {
-        "id": u.id, "username": u.username, "first_name": u.first_name,
-        "last_name": u.last_name, "language_code": u.language_code,
+        "id": u.id,
+        "username": u.username,
+        "first_name": u.first_name,
+        "last_name": u.last_name,
+        "language_code": u.language_code,
         "is_premium": getattr(u, "is_premium", False),
     }
+
     sp = context.args[0] if context.args else ""
     ref = None
     if sp.startswith("ref_"):
@@ -1200,20 +1206,113 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ref = int(sp[4:])
         except ValueError:
             pass
+
     get_or_create_user(user_dict, ref)
 
-    kb = [[InlineKeyboardButton(
-        "💰 افتح التطبيق واربح",
-        web_app=WebAppInfo(url=WEBAPP_URL),
-    )]]
-    await update.message.reply_text(
-        f"👋 *مرحباً {u.first_name}*\n\n💎 *AdVault Pro*\n▬▬▬▬▬▬▬▬▬▬\n"
-        f"• 👁️ اربح `${get_setting('ad_reward')}` لكل إعلان\n"
-        f"• 💸 اسحب (حد أدنى `${get_setting('min_withdraw')}`)\n"
-        f"• 🎁 مكافآت يومية + إحالات",
-        reply_markup=InlineKeyboardMarkup(kb),
-        parse_mode="Markdown",
+    # جلب صورة المستخدم إن لم تكن محفوظة
+    with db() as conn:
+        row = conn.execute(
+            "SELECT * FROM users WHERE user_id=?", (u.id,)
+        ).fetchone()
+
+    if row and not row["photo_url"]:
+        photo = await fetch_telegram_photo(u.id)
+        if photo:
+            with db() as conn:
+                conn.execute(
+                    "UPDATE users SET photo_url=? WHERE user_id=?",
+                    (photo, u.id),
+                )
+            row = db().execute(
+                "SELECT * FROM users WHERE user_id=?", (u.id,)
+            ).fetchone()
+
+    if not row:
+        await update.message.reply_text("حدث خطأ، حاول مجددًا")
+        return
+
+    balance = row["balance"] or 0
+    total_earned = row["total_earned"] or 0
+    ads_today = row["ads_today"] or 0
+    referrals = row["referrals"] or 0
+    streak = row["streak"] or 0
+
+    daily_limit = get_setting("daily_limit", "10")
+    ad_reward = get_setting("ad_reward", "0.20")
+    min_w = get_setting("min_withdraw", "10.00")
+    ref_bonus = get_setting("referral_bonus", "0.50")
+
+    user_id_txt = f"`{u.id}`"
+    username_txt = f"@{u.username}" if u.username else "—"
+    premium = "⭐" if getattr(u, "is_premium", False) else ""
+
+    welcome = (
+        f"╔══════════════════════════════╗\n"
+        f"        💎 *AdVault Pro* 💎\n"
+        f"╚══════════════════════════════╝\n\n"
+
+        f"👋 *أهلاً بك {u.first_name or 'صديقي'}* {premium}\n"
+        f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
+        f"🆔 *المعرّف:* {user_id_txt}\n"
+        f"🔗 *اسم المستخدم:* {username_txt}\n"
+        f"💰 *رصيدك:* `${balance:.2f}`\n"
+        f"📊 *إجمالي أرباحك:* `${total_earned:.2f}`\n"
+        f"👁️ *إعلانات اليوم:* `{ads_today}/{daily_limit}`\n"
+        f"🤝 *إحالاتك:* `{referrals}`\n"
+        f"🔥 *أيام متتالية:* `{streak}`\n"
+        f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n"
+
+        f"⚡ *ماذا يمكنك أن تفعل؟*\n"
+        f"• 👁️ اربح `${ad_reward}` لكل إعلان تشاهده\n"
+        f"• 🎁 مكافأة يومية متصاعدة\n"
+        f"• 📋 مهام متنوعة بمكافآت فورية\n"
+        f"• 🤝 اربح `${ref_bonus}` عن كل صديق\n"
+        f"• 💸 اسحب أرباحك (حد أدنى `${min_w}`)\n\n"
+
+        f"🏆 *المنصة الأقوى للربح من الإعلانات*\n"
+        f"👇 *اضغط الزر أدناه للبدء*"
     )
+
+    kb = [
+        [InlineKeyboardButton(
+            "💰 افتح التطبيق وابدأ الربح",
+            web_app=WebAppInfo(url=WEBAPP_URL),
+        )],
+        [
+            InlineKeyboardButton("🤝 رابط الإحالة", callback_data="get_ref"),
+            InlineKeyboardButton("📞 تواصل معنا",
+                                 url=f"https://t.me/{ADMIN_CONTACT}"),
+        ],
+        [InlineKeyboardButton("💰 رصيدي", callback_data="my_balance")],
+    ]
+
+    photo_url = row["photo_url"] or ""
+
+    try:
+        if photo_url:
+            await update.message.reply_photo(
+                photo=photo_url,
+                caption=welcome,
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(kb),
+            )
+        else:
+            await update.message.reply_text(
+                welcome,
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(kb),
+                disable_web_page_preview=True,
+            )
+    except Exception:
+        try:
+            await update.message.reply_text(
+                welcome,
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(kb),
+                disable_web_page_preview=True,
+            )
+        except Exception as e:
+            print(f"خطأ إرسال رسالة الترحيب: {e}")
 
 
 async def cmd_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1244,9 +1343,9 @@ async def cmd_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("افتح التطبيق أولاً")
         return
     await update.message.reply_text(
-        f"💰 `${row['balance']:.2f}`\n"
-        f"📊 `${row['total_earned']:.2f}`\n"
-        f"👁️ `{row['ads_today']}/{get_setting('daily_limit')}`",
+        f"💰 *رصيدك:* `${row['balance']:.2f}`\n"
+        f"📊 *إجمالي أرباحك:* `${row['total_earned']:.2f}`\n"
+        f"👁️ *إعلانات اليوم:* `{row['ads_today']}/{get_setting('daily_limit')}`",
         parse_mode="Markdown",
     )
 
@@ -1255,10 +1354,50 @@ async def cmd_ref(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     bot = context.bot.username
     link = f"https://t.me/{bot}?start=ref_{uid}"
+    bonus = get_setting("referral_bonus", "0.50")
     await update.message.reply_text(
-        f"🤝 *رابط الإحالة:*\n\n`{link}`\n\n"
-        f"اربح `${get_setting('referral_bonus')}` لكل صديق.",
+        f"🤝 *رابط الإحالة الخاص بك*\n"
+        f"▬▬▬▬▬▬▬▬▬▬\n"
+        f"`{link}`\n\n"
+        f"💰 اربح `${bonus}` عن كل صديق ينضم عبرك.",
         parse_mode="Markdown",
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 🔘 Callback Handlers
+# ═══════════════════════════════════════════════════════════════════════
+async def callback_get_ref(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
+    uid = q.from_user.id
+    bot = context.bot.username
+    link = f"https://t.me/{bot}?start=ref_{uid}"
+    bonus = get_setting("referral_bonus", "0.50")
+    await q.message.reply_text(
+        f"🤝 *رابط الإحالة الخاص بك*\n"
+        f"▬▬▬▬▬▬▬▬▬▬\n"
+        f"`{link}`\n\n"
+        f"💰 اربح `${bonus}` عن كل صديق ينضم عبرك.",
+        parse_mode="Markdown",
+    )
+
+
+async def callback_my_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
+    uid = q.from_user.id
+    with db() as conn:
+        row = conn.execute(
+            "SELECT * FROM users WHERE user_id=?", (uid,)
+        ).fetchone()
+    if not row:
+        await q.answer("افتح التطبيق أولاً", show_alert=True)
+        return
+    await q.answer(
+        f"💰 رصيدك: ${row['balance']:.2f}\n"
+        f"📊 إجمالي: ${row['total_earned']:.2f}",
+        show_alert=True,
     )
 
 
@@ -1320,9 +1459,8 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
 
-async def handle_admin_media(update: Update,
-                              context: ContextTypes.DEFAULT_TYPE):
-    """يستقبل المالك الوسائط ليضيفها كإعلان مباشرة"""
+async def handle_admin_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """المالك فقط: إرسال فيديو/صورة ليضاف كإعلان مباشرة"""
     if not is_admin(update.effective_user.id):
         return
 
@@ -1373,7 +1511,6 @@ async def handle_admin_media(update: Update,
 
 
 async def set_bot_commands(app_bot):
-    """يضبط أوامر البوت"""
     base = [
         BotCommand("start",   "🏠 ابدأ"),
         BotCommand("balance", "💰 رصيدي"),
@@ -1381,14 +1518,6 @@ async def set_bot_commands(app_bot):
     ]
     try:
         await app_bot.bot.set_my_commands(base)
-        for admin in ADMIN_IDS:
-            try:
-                await app_bot.bot.set_my_commands(
-                    base + [BotCommand("admin", "👑 لوحة التحكم")],
-                    scope=None,
-                )
-            except Exception:
-                pass
     except Exception:
         pass
 
@@ -1402,12 +1531,18 @@ async def run_bot():
         return
     app_bot = ApplicationBuilder().token(BOT_TOKEN).build()
 
+    # الأوامر
     app_bot.add_handler(CommandHandler("start", cmd_start))
     app_bot.add_handler(CommandHandler("admin", cmd_admin))
     app_bot.add_handler(CommandHandler("balance", cmd_balance))
     app_bot.add_handler(CommandHandler("ref", cmd_ref))
-    app_bot.add_handler(CallbackQueryHandler(
-        admin_callback, pattern=r"^(wd_ok_|wd_no_)"))
+
+    # الـ Callbacks
+    app_bot.add_handler(CallbackQueryHandler(callback_get_ref, pattern=r"^get_ref$"))
+    app_bot.add_handler(CallbackQueryHandler(callback_my_balance, pattern=r"^my_balance$"))
+    app_bot.add_handler(CallbackQueryHandler(admin_callback, pattern=r"^(wd_ok_|wd_no_)"))
+
+    # وسائط المالك
     app_bot.add_handler(MessageHandler(
         (filters.VIDEO | filters.PHOTO) & filters.User(ADMIN_IDS),
         handle_admin_media,
@@ -1418,6 +1553,7 @@ async def run_bot():
     await app_bot.start()
     await app_bot.updater.start_polling()
     print("✅ البوت يعمل...")
+    print(f"📞 للتواصل: @{ADMIN_CONTACT}")
     while True:
         await asyncio.sleep(3600)
 
