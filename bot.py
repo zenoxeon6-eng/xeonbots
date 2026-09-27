@@ -1,11 +1,12 @@
 """
 ════════════════════════════════════════════════════════════════════════
-💎 AdVault Pro — Cashbackigfbot
+💎 AdVault Pro — النسخة الجبارة النهائية
 ════════════════════════════════════════════════════════════════════════
-- المالك فقط من يضيف الإعلانات والمهام
-- زر تواصل مع @no_vi1
-- رسالة ترحيب فخمة مع معلومات المستخدم وزر الدخول
-- لا يوجد force-join
+✅ لا يوجد force-join نهائيًا
+✅ المالك يرى نفس الترحيب + أزرار إضافية
+✅ المستخدم يرى الترحيب + أزرار أساسية
+✅ زر تواصل مع @no_vi1
+✅ زر التطبيق المصغر
 ════════════════════════════════════════════════════════════════════════
 """
 
@@ -230,30 +231,25 @@ def user_to_dict(row):
     except Exception:
         account = {}
     return {
-        "user_id":           row["user_id"],
-        "username":          row["username"] or "",
-        "first_name":        row["first_name"] or "User",
-        "last_name":         row["last_name"] or "",
-        "is_premium":        bool(row["is_premium"]),
-        "photo_url":         row["photo_url"] or "",
-        "balance":           round(row["balance"], 2),
-        "total_earned":      round(row["total_earned"], 2),
-        "ads_watched":       row["ads_watched"],
-        "ads_today":         row["ads_today"],
-        "daily_limit":       int(get_setting("daily_limit", "10")),
-        "ad_reward":         float(get_setting("ad_reward", "0.20")),
-        "streak":            row["streak"],
-        "last_daily":        row["last_daily"],
-        "referrals":         row["referrals"],
-        "country":           row["country"] or "",
+        "user_id": row["user_id"], "username": row["username"] or "",
+        "first_name": row["first_name"] or "User",
+        "last_name": row["last_name"] or "",
+        "is_premium": bool(row["is_premium"]),
+        "photo_url": row["photo_url"] or "",
+        "balance": round(row["balance"], 2),
+        "total_earned": round(row["total_earned"], 2),
+        "ads_watched": row["ads_watched"], "ads_today": row["ads_today"],
+        "daily_limit": int(get_setting("daily_limit", "10")),
+        "ad_reward": float(get_setting("ad_reward", "0.20")),
+        "streak": row["streak"], "last_daily": row["last_daily"],
+        "referrals": row["referrals"], "country": row["country"] or "",
         "withdrawal_method": row["withdrawal_method"] or "",
         "withdrawal_fields": account.get("fields", {}),
-        "min_withdraw":      float(get_setting("min_withdraw", "10.00")),
-        "referral_bonus":    float(get_setting("referral_bonus", "0.50")),
-        "daily_bonus":       float(get_setting("daily_bonus", "0.10")),
-        "is_admin":          row["user_id"] in ADMIN_IDS,
-        "bot_username":      BOT_USERNAME,
-        "admin_contact":     ADMIN_CONTACT,
+        "min_withdraw": float(get_setting("min_withdraw", "10.00")),
+        "referral_bonus": float(get_setting("referral_bonus", "0.50")),
+        "daily_bonus": float(get_setting("daily_bonus", "0.10")),
+        "is_admin": row["user_id"] in ADMIN_IDS,
+        "bot_username": BOT_USERNAME, "admin_contact": ADMIN_CONTACT,
     }
 
 
@@ -276,7 +272,6 @@ def get_or_create_user(user, referrer_id=None):
             ).fetchone()
 
         now = datetime.now(timezone.utc).isoformat()
-
         if referrer_id and referrer_id != uid:
             ref_exists = conn.execute(
                 "SELECT 1 FROM users WHERE user_id=?", (referrer_id,)
@@ -284,11 +279,11 @@ def get_or_create_user(user, referrer_id=None):
             if ref_exists:
                 bonus = float(get_setting("referral_bonus", "0.50"))
                 conn.execute(
-                    """UPDATE users SET balance=balance+?, total_earned=total_earned+?,
-                       referrals=referrals+1 WHERE user_id=?""",
+                    """UPDATE users SET balance=balance+?,
+                       total_earned=total_earned+?, referrals=referrals+1
+                       WHERE user_id=?""",
                     (bonus, bonus, referrer_id),
                 )
-
         conn.execute(
             """INSERT INTO users (user_id, username, first_name, last_name,
                language_code, is_premium, referred_by, last_ad_reset, created_at)
@@ -318,7 +313,7 @@ def reset_ads_if_needed(row):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🔐 التحقق
+# 🔐 التحقق + أدوات Telegram
 # ═══════════════════════════════════════════════════════════════════════
 def validate_init_data(init_data):
     if not init_data or not BOT_TOKEN:
@@ -398,7 +393,7 @@ def require_admin(user_id):
 # ═══════════════════════════════════════════════════════════════════════
 # 🚀 FastAPI
 # ═══════════════════════════════════════════════════════════════════════
-app = FastAPI(title="AdVault Pro", version="4.0.0")
+app = FastAPI(title="AdVault Pro", version="5.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -540,8 +535,7 @@ async def api_ad_media(ad_id: int, range: str = Header(None)):
             raise HTTPException(resp.status_code, "خطأ")
         if media_type == "video/mp4":
             return StreamingResponse(
-                resp.aiter_bytes(),
-                status_code=resp.status_code,
+                resp.aiter_bytes(), status_code=resp.status_code,
                 media_type=media_type,
                 headers={
                     "Content-Range": resp.headers.get("Content-Range", ""),
@@ -601,7 +595,7 @@ async def api_watch_ad(ad_id: int, req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📋 المهام
+# 📋 المهام + اليومية + المتصدرون
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/tasks")
 async def api_tasks(user_id: int):
@@ -651,9 +645,6 @@ async def api_task_claim(task_id: int, req: Request):
     return {"reward": task["reward"] or 0, "balance": round(row["balance"], 2)}
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🎁 المكافأة اليومية
-# ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/daily")
 async def api_daily(req: Request):
     body = await req.json()
@@ -683,9 +674,6 @@ async def api_daily(req: Request):
             "balance": round(row["balance"], 2)}
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🏆 المتصدرون
-# ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/leaderboard")
 async def api_leaderboard():
     with db() as conn:
@@ -702,9 +690,6 @@ async def api_leaderboard():
     } for i, r in enumerate(rows)]
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🌍 الدول والسحب
-# ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/countries")
 async def api_countries():
     return COUNTRIES
@@ -802,9 +787,6 @@ async def api_withdrawals(user_id: int):
     return [dict(r) for r in rows]
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 📞 طلب تواصل
-# ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/contact-request")
 async def api_contact_request(req: Request):
     body = await req.json()
@@ -834,7 +816,7 @@ async def api_contact_request(req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🔔 إشعارات المشرف
+# 🔔 إشعارات
 # ═══════════════════════════════════════════════════════════════════════
 async def notify_admin_withdrawal(admin, wid, user_id, amount,
                                   country, method_name, account_json):
@@ -919,8 +901,7 @@ async def adm_add_ad(req: Request):
     with db() as conn:
         cur = conn.execute(
             """INSERT INTO ads (title, description, url, contact, type,
-               reward, duration, created_at)
-               VALUES (?,?,?,?,?,?,?,?)""",
+               reward, duration, created_at) VALUES (?,?,?,?,?,?,?,?)""",
             (title, body.get("description", ""), body.get("url", ""),
              body.get("contact", ""), "link",
              float(get_setting("ad_reward", "0.20")),
@@ -1123,8 +1104,7 @@ async def adm_users(user_id: int, q: str = None, limit: int = 50):
         if q:
             rows = conn.execute(
                 """SELECT user_id, username, first_name, balance,
-                          total_earned, banned
-                   FROM users
+                          total_earned, banned FROM users
                    WHERE username LIKE ? OR first_name LIKE ? OR user_id=?
                    ORDER BY total_earned DESC LIMIT ?""",
                 (f"%{q}%", f"%{q}%", q if q.isdigit() else 0, limit),
@@ -1132,8 +1112,8 @@ async def adm_users(user_id: int, q: str = None, limit: int = 50):
         else:
             rows = conn.execute(
                 """SELECT user_id, username, first_name, balance,
-                          total_earned, banned
-                   FROM users ORDER BY total_earned DESC LIMIT ?""",
+                          total_earned, banned FROM users
+                   ORDER BY total_earned DESC LIMIT ?""",
                 (limit,),
             ).fetchall()
     return [dict(r) for r in rows]
@@ -1185,16 +1165,14 @@ async def adm_broadcast(req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🤖 أوامر البوت — /start الفخم
+# 🤖 /start — الترحيب الفخم
 # ═══════════════════════════════════════════════════════════════════════
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     u = update.effective_user
 
     user_dict = {
-        "id": u.id,
-        "username": u.username,
-        "first_name": u.first_name,
-        "last_name": u.last_name,
+        "id": u.id, "username": u.username,
+        "first_name": u.first_name, "last_name": u.last_name,
         "language_code": u.language_code,
         "is_premium": getattr(u, "is_premium", False),
     }
@@ -1209,12 +1187,12 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     get_or_create_user(user_dict, ref)
 
-    # جلب صورة المستخدم إن لم تكن محفوظة
     with db() as conn:
         row = conn.execute(
             "SELECT * FROM users WHERE user_id=?", (u.id,)
         ).fetchone()
 
+    # جلب صورة البروفايل
     if row and not row["photo_url"]:
         photo = await fetch_telegram_photo(u.id)
         if photo:
@@ -1242,49 +1220,71 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     min_w = get_setting("min_withdraw", "10.00")
     ref_bonus = get_setting("referral_bonus", "0.50")
 
-    user_id_txt = f"`{u.id}`"
-    username_txt = f"@{u.username}" if u.username else "—"
-    premium = "⭐" if getattr(u, "is_premium", False) else ""
+    is_owner = u.id in ADMIN_IDS
+    premium = "⭐ " if getattr(u, "is_premium", False) else ""
+    owner_badge = "👑 " if is_owner else ""
+    rank_icon = "💎" if is_owner else "🎯"
 
     welcome = (
-        f"╔══════════════════════════════╗\n"
-        f"        💎 *AdVault Pro* 💎\n"
-        f"╚══════════════════════════════╝\n\n"
+        f"✨━━━━━━━━━━━━━━━━━━━━━━━━━✨\n"
+        f"    💎 *AdVault Pro* 💎\n"
+        f"      _{rank_icon} منصة الربح الأولى_\n"
+        f"✨━━━━━━━━━━━━━━━━━━━━━━━━━✨\n\n"
 
-        f"👋 *أهلاً بك {u.first_name or 'صديقي'}* {premium}\n"
-        f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
-        f"🆔 *المعرّف:* {user_id_txt}\n"
-        f"🔗 *اسم المستخدم:* {username_txt}\n"
-        f"💰 *رصيدك:* `${balance:.2f}`\n"
-        f"📊 *إجمالي أرباحك:* `${total_earned:.2f}`\n"
-        f"👁️ *إعلانات اليوم:* `{ads_today}/{daily_limit}`\n"
-        f"🤝 *إحالاتك:* `{referrals}`\n"
-        f"🔥 *أيام متتالية:* `{streak}`\n"
-        f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n"
+        f"{owner_badge}{premium}*أهلاً {u.first_name or 'صديقي'}*\n"
+        f"╭─────────────────────────╮\n"
+        f"│ 🆔 *المعرّف:* `{u.id}`\n"
+        f"│ 🔗 *اليوزر:* {('@'+u.username) if u.username else '—'}\n"
+        f"│ 💰 *رصيدك:* `${balance:.2f}`\n"
+        f"│ 📊 *إجمالي أرباحك:* `${total_earned:.2f}`\n"
+        f"│ 👁️ *إعلانات اليوم:* `{ads_today}/{daily_limit}`\n"
+        f"│ 🤝 *إحالاتك:* `{referrals}`\n"
+        f"│ 🔥 *Streak:* `{streak}` يوم\n"
+        f"╰─────────────────────────╯\n\n"
 
-        f"⚡ *ماذا يمكنك أن تفعل؟*\n"
-        f"• 👁️ اربح `${ad_reward}` لكل إعلان تشاهده\n"
-        f"• 🎁 مكافأة يومية متصاعدة\n"
-        f"• 📋 مهام متنوعة بمكافآت فورية\n"
-        f"• 🤝 اربح `${ref_bonus}` عن كل صديق\n"
-        f"• 💸 اسحب أرباحك (حد أدنى `${min_w}`)\n\n"
-
-        f"🏆 *المنصة الأقوى للربح من الإعلانات*\n"
-        f"👇 *اضغط الزر أدناه للبدء*"
+        f"⚡ *ماذا يمكنك؟*\n"
+        f"┌─────────────────────────┐\n"
+        f"│ 👁️ اربح `${ad_reward}` لكل إعلان\n"
+        f"│ 🎁 مكافأة يومية + Streak\n"
+        f"│ 📋 مهام بمكافآت فورية\n"
+        f"│ 🤝 اربح `${ref_bonus}` عن كل صديق\n"
+        f"│ 💸 اسحب من `${min_w}`\n"
+        f"└─────────────────────────┘\n"
     )
 
+    if is_owner:
+        welcome += (
+            f"\n👑 *أنت المالك — أزرار خاصة ظاهرة لك:*\n"
+            f"• استخدم `/admin` لفتح لوحة التحكم\n"
+            f"• أرسل فيديو/صورة + تعليق: `العنوان | رابط | المدة`\n"
+        )
+
+    welcome += f"\n👇 *اضغط الزر أدناه للبدء الآن*"
+
+    # ═══ الأزرار ═══
     kb = [
         [InlineKeyboardButton(
-            "💰 افتح التطبيق وابدأ الربح",
+            "🚀 افتح التطبيق وابدأ الربح",
             web_app=WebAppInfo(url=WEBAPP_URL),
         )],
         [
             InlineKeyboardButton("🤝 رابط الإحالة", callback_data="get_ref"),
-            InlineKeyboardButton("📞 تواصل معنا",
-                                 url=f"https://t.me/{ADMIN_CONTACT}"),
+            InlineKeyboardButton("💰 رصيدي", callback_data="my_balance"),
         ],
-        [InlineKeyboardButton("💰 رصيدي", callback_data="my_balance")],
+        [
+            InlineKeyboardButton(
+                "📞 تواصل معنا",
+                url=f"https://t.me/{ADMIN_CONTACT}",
+            ),
+            InlineKeyboardButton("📊 المتصدرون", callback_data="show_lb"),
+        ],
     ]
+
+    if is_owner:
+        kb.append([InlineKeyboardButton(
+            "👑 لوحة التحكم الكاملة",
+            web_app=WebAppInfo(url=WEBAPP_URL),
+        )])
 
     photo_url = row["photo_url"] or ""
 
@@ -1298,21 +1298,19 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             await update.message.reply_text(
-                welcome,
-                parse_mode="Markdown",
+                welcome, parse_mode="Markdown",
                 reply_markup=InlineKeyboardMarkup(kb),
                 disable_web_page_preview=True,
             )
     except Exception:
         try:
             await update.message.reply_text(
-                welcome,
-                parse_mode="Markdown",
+                welcome, parse_mode="Markdown",
                 reply_markup=InlineKeyboardMarkup(kb),
                 disable_web_page_preview=True,
             )
         except Exception as e:
-            print(f"خطأ إرسال رسالة الترحيب: {e}")
+            print(f"❌ خطأ إرسال الترحيب: {e}")
 
 
 async def cmd_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1323,7 +1321,7 @@ async def cmd_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👑 *لوحة التحكم*\n\n"
         "افتح التطبيق المصغر وستجد تبويب 👑 المشرف\n\n"
         "📌 *لإضافة إعلان فيديو/صورة:*\n"
-        "أرسل الوسائط هنا مع تعليق بالشكل:\n"
+        "أرسل الوسائط مع تعليق بالشكل:\n"
         "`العنوان | رابط أو رقم تواصل | المدة`",
         reply_markup=InlineKeyboardMarkup([[
             InlineKeyboardButton("👑 فتح لوحة التحكم",
@@ -1344,7 +1342,7 @@ async def cmd_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await update.message.reply_text(
         f"💰 *رصيدك:* `${row['balance']:.2f}`\n"
-        f"📊 *إجمالي أرباحك:* `${row['total_earned']:.2f}`\n"
+        f"📊 *إجمالي:* `${row['total_earned']:.2f}`\n"
         f"👁️ *إعلانات اليوم:* `{row['ads_today']}/{get_setting('daily_limit')}`",
         parse_mode="Markdown",
     )
@@ -1375,10 +1373,9 @@ async def callback_get_ref(update: Update, context: ContextTypes.DEFAULT_TYPE):
     link = f"https://t.me/{bot}?start=ref_{uid}"
     bonus = get_setting("referral_bonus", "0.50")
     await q.message.reply_text(
-        f"🤝 *رابط الإحالة الخاص بك*\n"
-        f"▬▬▬▬▬▬▬▬▬▬\n"
+        f"🤝 *رابط الإحالة*\n▬▬▬▬▬▬▬▬▬▬\n"
         f"`{link}`\n\n"
-        f"💰 اربح `${bonus}` عن كل صديق ينضم عبرك.",
+        f"💰 اربح `${bonus}` عن كل صديق.",
         parse_mode="Markdown",
     )
 
@@ -1399,6 +1396,26 @@ async def callback_my_balance(update: Update, context: ContextTypes.DEFAULT_TYPE
         f"📊 إجمالي: ${row['total_earned']:.2f}",
         show_alert=True,
     )
+
+
+async def callback_show_lb(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
+    with db() as conn:
+        rows = conn.execute(
+            """SELECT first_name, username, total_earned FROM users
+               WHERE banned=0 ORDER BY total_earned DESC LIMIT 10"""
+        ).fetchall()
+    if not rows:
+        await q.message.reply_text("لا يوجد متصدرون بعد")
+        return
+    medals = ["🥇", "🥈", "🥉"]
+    txt = "🏆 *أعلى 10 رابحين*\n▬▬▬▬▬▬▬▬▬▬\n"
+    for i, r in enumerate(rows):
+        ico = medals[i] if i < 3 else f"{i+1}."
+        name = r["first_name"] or "User"
+        txt += f"{ico} {name} — `${r['total_earned']:.2f}`\n"
+    await q.message.reply_text(txt, parse_mode="Markdown")
 
 
 async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1460,14 +1477,11 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_admin_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """المالك فقط: إرسال فيديو/صورة ليضاف كإعلان مباشرة"""
     if not is_admin(update.effective_user.id):
         return
-
     msg = update.message
     if not (msg.video or msg.photo):
         return
-
     caption = msg.caption or ""
     parts = [p.strip() for p in caption.split("|")]
     if not parts or not parts[0]:
@@ -1477,18 +1491,14 @@ async def handle_admin_media(update: Update, context: ContextTypes.DEFAULT_TYPE)
             parse_mode="Markdown",
         )
         return
-
     title = parts[0]
     contact = parts[1] if len(parts) > 1 else ""
     duration = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 15
-
     ad_url = contact if contact.startswith("http") else ""
     contact_val = "" if contact.startswith("http") else contact
-
     video_id = msg.video.file_id if msg.video else None
     image_id = msg.photo[-1].file_id if msg.photo else None
     atype = "video" if video_id else "image"
-
     with db() as conn:
         cur = conn.execute(
             """INSERT INTO ads (title, description, url, contact, type,
@@ -1500,24 +1510,20 @@ async def handle_admin_media(update: Update, context: ContextTypes.DEFAULT_TYPE)
              duration, datetime.now(timezone.utc).isoformat()),
         )
         aid = cur.lastrowid
-
     await msg.reply_text(
         f"✅ *تمت إضافة الإعلان*\n"
-        f"🆔 `#{aid}`\n"
-        f"📌 {title}\n"
-        f"🎬 {atype} • ⏱ {duration}s",
+        f"🆔 `#{aid}`\n📌 {title}\n🎬 {atype} • ⏱ {duration}s",
         parse_mode="Markdown",
     )
 
 
 async def set_bot_commands(app_bot):
-    base = [
-        BotCommand("start",   "🏠 ابدأ"),
-        BotCommand("balance", "💰 رصيدي"),
-        BotCommand("ref",     "🤝 رابط الإحالة"),
-    ]
     try:
-        await app_bot.bot.set_my_commands(base)
+        await app_bot.bot.set_my_commands([
+            BotCommand("start", "🏠 ابدأ"),
+            BotCommand("balance", "💰 رصيدي"),
+            BotCommand("ref", "🤝 رابط الإحالة"),
+        ])
     except Exception:
         pass
 
@@ -1531,18 +1537,16 @@ async def run_bot():
         return
     app_bot = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    # الأوامر
     app_bot.add_handler(CommandHandler("start", cmd_start))
     app_bot.add_handler(CommandHandler("admin", cmd_admin))
     app_bot.add_handler(CommandHandler("balance", cmd_balance))
     app_bot.add_handler(CommandHandler("ref", cmd_ref))
 
-    # الـ Callbacks
     app_bot.add_handler(CallbackQueryHandler(callback_get_ref, pattern=r"^get_ref$"))
     app_bot.add_handler(CallbackQueryHandler(callback_my_balance, pattern=r"^my_balance$"))
+    app_bot.add_handler(CallbackQueryHandler(callback_show_lb, pattern=r"^show_lb$"))
     app_bot.add_handler(CallbackQueryHandler(admin_callback, pattern=r"^(wd_ok_|wd_no_)"))
 
-    # وسائط المالك
     app_bot.add_handler(MessageHandler(
         (filters.VIDEO | filters.PHOTO) & filters.User(ADMIN_IDS),
         handle_admin_media,
