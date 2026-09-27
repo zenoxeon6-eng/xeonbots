@@ -1,20 +1,21 @@
 """
 ════════════════════════════════════════════════════════════════════════
-💎 AdVault Pro v6 — الجبارة المتعددة اللغات
+💎 AdVault Pro VIP — النسخة الجبارة
 ════════════════════════════════════════════════════════════════════════
-✅ يعمل للجميع (لا force-join نهائيًا)
-✅ إعلانات متعددة الوسائط (فيديو + عدة صور)
-✅ زر توجيه مخصص لكل إعلان
-✅ إضافة الإعلانات من التطبيق (رفع مباشر)
-✅ متعدد اللغات (عربي / إنجليزي)
-✅ بطاقة محفظة فخمة
-✅ إحالات + إحصائيات + إشعارات
+✅ يعمل للجميع (زر التطبيق يظهر للكل)
+✅ نبضة كل 10 ثواني (منع Render من النوم)
+✅ إصلاح Conflict تلقائيًا
+✅ إعلانات متعددة الوسائط (فيديو + صور)
+✅ رفع مباشر من التطبيق
+✅ متعدد اللغات + بطاقة محفظة
+✅ Anti-spam + Rate limiting
 ════════════════════════════════════════════════════════════════════════
 """
 
 import os, hmac, json, time, sqlite3, hashlib, asyncio, re, shutil, tempfile
 from urllib.parse import parse_qsl
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from collections import defaultdict, deque
 
 import httpx
 from fastapi import FastAPI, Request, HTTPException, Header, UploadFile, File, Form
@@ -24,24 +25,26 @@ import uvicorn
 
 from telegram import (
     Update, InlineKeyboardButton, InlineKeyboardMarkup,
-    WebAppInfo, BotCommand,
+    WebAppInfo, BotCommand, MenuButtonWebApp, MenuButtonCommands,
 )
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters, ContextTypes,
 )
+from telegram.error import Conflict, TelegramError, RetryAfter
 
 # ═══════════════════════════════════════════════════════════════════════
 # ⚙️ الإعدادات
 # ═══════════════════════════════════════════════════════════════════════
 BOT_TOKEN      = os.getenv("BOT_TOKEN", "8909959176:AAHtOv4alGndeFTY0_Juqf5hpLsQV5z-hlc")
-WEBAPP_URL     = os.getenv("WEBAPP_URL", "https://xeonbots.onrender.com/")
+WEBAPP_URL     = os.getenv("WEBAPP_URL", "https://xeonbots.onrender.com/").rstrip("/") + "/"
 BOT_USERNAME   = os.getenv("BOT_USERNAME", "pay_pIus_bot").lstrip("@")
 ADMIN_CONTACT  = os.getenv("ADMIN_CONTACT", "no_vi1").lstrip("@")
-UPLOAD_CHAT_ID = os.getenv("UPLOAD_CHAT_ID", "8233835640")  # chat_id لرفع الوسائط (عادة نفس المشرف)
+UPLOAD_CHAT_ID = os.getenv("UPLOAD_CHAT_ID", "8233835640")
 HOST           = os.getenv("HOST", "0.0.0.0")
 PORT           = int(os.getenv("PORT", "8000"))
 DB_PATH        = os.getenv("DB_PATH", "ads.db")
+PING_INTERVAL  = int(os.getenv("PING_INTERVAL", "10"))
 
 ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "8233835640").split(",")
              if x.strip().isdigit()]
@@ -51,6 +54,25 @@ DEF_DAILY_LIMIT    = 10
 DEF_MIN_WITHDRAW   = 10.00
 DEF_REFERRAL_BONUS = 0.50
 DEF_DAILY_BONUS    = 0.10
+
+START_TIME = time.time()
+
+# ═══════════════════════════════════════════════════════════════════════
+# 🛡️ Anti-Spam (Rate Limiting in memory)
+# ═══════════════════════════════════════════════════════════════════════
+RATE_LIMIT = defaultdict(lambda: deque(maxlen=20))
+
+def rate_ok(user_id, max_hits=10, window=10):
+    """يرجع True إذا كان ضمن الحد المسموح"""
+    now = time.time()
+    q = RATE_LIMIT[user_id]
+    while q and now - q[0] > window:
+        q.popleft()
+    if len(q) >= max_hits:
+        return False
+    q.append(now)
+    return True
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # 🌐 اللغات
@@ -91,6 +113,9 @@ LANGS = {
         "save_data": "حفظ البيانات",
         "open_link": "فتح الرابط",
         "back": "رجوع",
+        "welcome_back": "أهلاً بعودتك",
+        "rank": "ترتيبك",
+        "select_lang": "اختر اللغة",
     },
     "en": {
         "dir": "ltr",
@@ -120,13 +145,16 @@ LANGS = {
         "home": "Home",
         "withdraw": "Withdraw",
         "amount": "Amount",
-        "send_request": "Send Withdraw Request",
+        "send_request": "Send Request",
         "min_withdraw": "Minimum",
-        "country": "Choose Country",
-        "method": "Withdraw Method",
-        "save_data": "Save Data",
+        "country": "Country",
+        "method": "Method",
+        "save_data": "Save",
         "open_link": "Open Link",
         "back": "Back",
+        "welcome_back": "Welcome back",
+        "rank": "Your Rank",
+        "select_lang": "Select Language",
     },
 }
 
@@ -178,8 +206,10 @@ def get_method(country_code, method_id):
 # 💾 قاعدة البيانات
 # ═══════════════════════════════════════════════════════════════════════
 def db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
     return conn
 
 
@@ -198,7 +228,8 @@ def init_db():
             referrals INTEGER DEFAULT 0, referred_by INTEGER,
             country TEXT, withdrawal_method TEXT, withdrawal_data TEXT,
             banned INTEGER DEFAULT 0, created_at TEXT,
-            lang TEXT DEFAULT 'ar'
+            lang TEXT DEFAULT 'ar',
+            last_seen INTEGER DEFAULT 0
         );
         CREATE TABLE IF NOT EXISTS ads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -240,6 +271,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY, value TEXT
         );
+        CREATE INDEX IF NOT EXISTS idx_users_earned ON users(total_earned DESC);
+        CREATE INDEX IF NOT EXISTS idx_ads_active ON ads(active);
         """)
 
         for tbl, col, typ in [
@@ -247,6 +280,7 @@ def init_db():
             ("ads", "button_text", "TEXT"),
             ("ads", "redirect_url", "TEXT"),
             ("users", "lang", "TEXT DEFAULT 'ar'"),
+            ("users", "last_seen", "INTEGER DEFAULT 0"),
         ]:
             try:
                 conn.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {typ}")
@@ -306,17 +340,18 @@ def user_to_dict(row):
 
 def get_or_create_user(user, referrer_id=None):
     uid = user["id"]
+    now_ts = int(time.time())
     with db() as conn:
         row = conn.execute("SELECT * FROM users WHERE user_id=?", (uid,)).fetchone()
         if row:
             conn.execute(
                 """UPDATE users SET username=?, first_name=?, last_name=?,
-                   language_code=?, is_premium=? WHERE user_id=?""",
+                   language_code=?, is_premium=?, last_seen=? WHERE user_id=?""",
                 (user.get("username", ""), user.get("first_name", ""), user.get("last_name", ""),
-                 user.get("language_code", ""), 1 if user.get("is_premium") else 0, uid))
+                 user.get("language_code", ""), 1 if user.get("is_premium") else 0,
+                 now_ts, uid))
             return conn.execute("SELECT * FROM users WHERE user_id=?", (uid,)).fetchone()
 
-        now = datetime.now(timezone.utc).isoformat()
         if referrer_id and referrer_id != uid:
             if conn.execute("SELECT 1 FROM users WHERE user_id=?", (referrer_id,)).fetchone():
                 bonus = float(get_setting("referral_bonus", "0.50"))
@@ -331,11 +366,11 @@ def get_or_create_user(user, referrer_id=None):
 
         conn.execute(
             """INSERT INTO users (user_id, username, first_name, last_name,
-               language_code, is_premium, referred_by, last_ad_reset, created_at, lang)
-               VALUES (?,?,?,?,?,?,?,?,?,?)""",
+               language_code, is_premium, referred_by, last_ad_reset, created_at, lang, last_seen)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
             (uid, user.get("username", ""), user.get("first_name", ""), user.get("last_name", ""),
              user.get("language_code", ""), 1 if user.get("is_premium") else 0,
-             referrer_id, int(time.time()), now, detected_lang))
+             referrer_id, now_ts, datetime.now(timezone.utc).isoformat(), detected_lang, now_ts))
         return conn.execute("SELECT * FROM users WHERE user_id=?", (uid,)).fetchone()
 
 
@@ -351,6 +386,20 @@ def reset_ads_if_needed(row):
     return row
 
 
+def user_rank(uid):
+    with db() as conn:
+        row = conn.execute(
+            """SELECT COUNT(*) + 1 AS rank FROM users
+               WHERE banned=0 AND total_earned > (
+                   SELECT COALESCE(total_earned,0) FROM users WHERE user_id=?
+               )""", (uid,)).fetchone()
+        total = conn.execute("SELECT COUNT(*) FROM users WHERE banned=0").fetchone()[0]
+    return (row["rank"] if row else 0), total
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 🔐 التحقق
+# ═══════════════════════════════════════════════════════════════════════
 def validate_init_data(init_data):
     if not init_data or not BOT_TOKEN:
         return None
@@ -416,9 +465,43 @@ def require_admin(user_id):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# 💓 النبضة (Heartbeat) — كل 10 ثواني
+# ═══════════════════════════════════════════════════════════════════════
+HEARTBEAT_STATS = {"internal": 0, "external": 0, "started": time.time(), "last": 0}
+
+async def internal_heartbeat():
+    """يضرب الخادم المحلي كل 10 ثواني ليبقى event loop نشطًا"""
+    await asyncio.sleep(20)
+    url = f"http://127.0.0.1:{PORT}/health"
+    while True:
+        try:
+            async with httpx.AsyncClient(timeout=5) as c:
+                await c.get(url)
+            HEARTBEAT_STATS["internal"] += 1
+            HEARTBEAT_STATS["last"] = int(time.time())
+        except Exception:
+            pass
+        await asyncio.sleep(PING_INTERVAL)
+
+
+async def external_heartbeat():
+    """يضرب رابط Render الخارجي كل 10 ثواني لمنع النوم"""
+    await asyncio.sleep(45)
+    url = f"{WEBAPP_URL.rstrip('/')}/health"
+    while True:
+        try:
+            async with httpx.AsyncClient(timeout=10) as c:
+                await c.get(url)
+            HEARTBEAT_STATS["external"] += 1
+        except Exception:
+            pass
+        await asyncio.sleep(PING_INTERVAL)
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # 🚀 FastAPI
 # ═══════════════════════════════════════════════════════════════════════
-app = FastAPI(title="AdVault Pro", version="6.0.0")
+app = FastAPI(title="AdVault Pro VIP", version="7.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -431,12 +514,20 @@ async def root():
         html = html.replace("__ADMIN_CONTACT_PLACEHOLDER__", ADMIN_CONTACT or "")
         return html
     except FileNotFoundError:
-        return HTMLResponse("<h1>index.html غير موجود</h1>", status_code=500)
+        return HTMLResponse("<h1>index.html missing</h1>", status_code=500)
 
 
 @app.get("/health")
 async def health():
-    return {"ok": True, "bot": BOT_USERNAME, "time": datetime.now(timezone.utc).isoformat()}
+    uptime = int(time.time() - START_TIME)
+    return {
+        "ok": True,
+        "bot": BOT_USERNAME,
+        "uptime": uptime,
+        "uptime_human": str(timedelta(seconds=uptime)),
+        "heartbeat": HEARTBEAT_STATS,
+        "time": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 @app.get("/api/langs/{code}")
@@ -483,6 +574,12 @@ async def api_me(user_id: int):
     reset_ads_if_needed(dict(row))
     fresh = db().execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
     return user_to_dict(fresh)
+
+
+@app.get("/api/rank")
+async def api_rank(user_id: int):
+    rank, total = user_rank(user_id)
+    return {"rank": rank, "total": total}
 
 
 @app.post("/api/set-lang")
@@ -661,9 +758,6 @@ async def api_task_claim(task_id: int, req: Request):
     return {"reward": task["reward"] or 0, "balance": round(row["balance"], 2)}
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🎁 اليومية + المتصدرون
-# ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/daily")
 async def api_daily(req: Request):
     body = await req.json()
@@ -697,9 +791,6 @@ async def api_leaderboard():
              "total_earned": round(r["total_earned"], 2)} for i, r in enumerate(rows)]
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🌍 السحب
-# ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/countries")
 async def api_countries():
     return COUNTRIES
@@ -782,6 +873,8 @@ async def api_contact_request(req: Request):
     message = (body.get("message") or "").strip()
     if not message:
         raise HTTPException(400, "الرسالة مطلوبة")
+    if not rate_ok(user_id, max_hits=3, window=60):
+        raise HTTPException(429, "تريد الإرسال كثيرًا، انتظر قليلًا")
     with db() as conn:
         row = conn.execute("SELECT username FROM users WHERE user_id=?", (user_id,)).fetchone()
         username = row["username"] if row else ""
@@ -796,9 +889,6 @@ async def api_contact_request(req: Request):
     return {"ok": True}
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🔔 إشعارات
-# ═══════════════════════════════════════════════════════════════════════
 async def notify_admin_withdrawal(admin, wid, user_id, amount, country, method_name, account_json):
     if not BOT_TOKEN:
         return
@@ -828,15 +918,11 @@ async def notify_admin_contact(admin, user_id, username, message):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 👑 Admin API + رفع الوسائط
+# 👑 Admin API
 # ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/admin/upload-media")
-async def adm_upload_media(
-    file: UploadFile = File(...),
-    user_id: int = Form(...),
-):
+async def adm_upload_media(file: UploadFile = File(...), user_id: int = Form(...)):
     require_admin(user_id)
-
     if not BOT_TOKEN:
         raise HTTPException(500, "BOT_TOKEN مفقود")
 
@@ -846,22 +932,16 @@ async def adm_upload_media(
         media_type = "video"
 
     suffix = ".jpg"
-    if "png" in ct:
-        suffix = ".png"
-    elif "mp4" in ct:
-        suffix = ".mp4"
-    elif "gif" in ct:
-        suffix = ".gif"
-    elif "webp" in ct:
-        suffix = ".webp"
+    if "png" in ct: suffix = ".png"
+    elif "mp4" in ct: suffix = ".mp4"
+    elif "gif" in ct: suffix = ".gif"
+    elif "webp" in ct: suffix = ".webp"
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         shutil.copyfileobj(file.file, tmp)
         tmp_path = tmp.name
 
-    upload_target = user_id
-    if UPLOAD_CHAT_ID and UPLOAD_CHAT_ID.lstrip("-").isdigit():
-        upload_target = int(UPLOAD_CHAT_ID)
+    upload_target = int(UPLOAD_CHAT_ID) if UPLOAD_CHAT_ID.lstrip("-").isdigit() else user_id
 
     try:
         async with httpx.AsyncClient(timeout=120) as c:
@@ -870,36 +950,29 @@ async def adm_upload_media(
                     r = await c.post(
                         f"https://api.telegram.org/bot{BOT_TOKEN}/sendVideo",
                         data={"chat_id": upload_target},
-                        files={"video": (file.filename or "v.mp4", fh, ct or "video/mp4")},
-                    )
+                        files={"video": (file.filename or "v.mp4", fh, ct or "video/mp4")})
                 else:
                     r = await c.post(
                         f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto",
                         data={"chat_id": upload_target},
-                        files={"photo": (file.filename or "i.jpg", fh, ct or "image/jpeg")},
-                    )
+                        files={"photo": (file.filename or "i.jpg", fh, ct or "image/jpeg")})
             data = r.json()
             if not data.get("ok"):
                 raise HTTPException(400, data.get("description") or "فشل الرفع")
-
             result = data["result"]
-            if media_type == "video":
-                file_id = result["video"]["file_id"]
-            else:
-                file_id = result["photo"][-1]["file_id"]
+            file_id = result["video"]["file_id"] if media_type == "video" else result["photo"][-1]["file_id"]
 
         try:
-            await c.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",
-                         json={"chat_id": upload_target, "message_id": result["message_id"]})
+            async with httpx.AsyncClient(timeout=10) as c2:
+                await c2.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",
+                              json={"chat_id": upload_target, "message_id": result["message_id"]})
         except Exception:
             pass
 
         return {"ok": True, "file_id": file_id, "type": media_type}
     finally:
-        try:
-            os.unlink(tmp_path)
-        except Exception:
-            pass
+        try: os.unlink(tmp_path)
+        except Exception: pass
 
 
 @app.post("/api/admin/ads/create")
@@ -909,13 +982,10 @@ async def adm_create_ad(req: Request):
     title = (body.get("title") or "").strip()
     if not title:
         raise HTTPException(400, "العنوان مطلوب")
-
     media = body.get("media") or []
     if not isinstance(media, list):
         media = []
-
     media_json = json.dumps(media, ensure_ascii=False)
-
     with db() as conn:
         cur = conn.execute(
             """INSERT INTO ads (title, description, url, contact, type,
@@ -923,8 +993,7 @@ async def adm_create_ad(req: Request):
                button_text, redirect_url, created_at)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (title, body.get("description", ""), body.get("url", ""),
-             body.get("contact", ""), "multi",
-             "", "", media_json,
+             body.get("contact", ""), "multi", "", "", media_json,
              float(get_setting("ad_reward", "0.20")),
              int(body.get("duration", 15)),
              body.get("button_text", ""), body.get("redirect_url", ""),
@@ -944,8 +1013,14 @@ async def adm_stats(user_id: int):
         cr = conn.execute("SELECT COUNT(*) FROM contact_requests WHERE status='new'").fetchone()[0]
         paid = conn.execute("SELECT COALESCE(SUM(amount),0) FROM withdrawals WHERE status='approved'").fetchone()[0]
         views = conn.execute("SELECT COALESCE(SUM(views),0) FROM ads").fetchone()[0]
+        total_balance = conn.execute("SELECT COALESCE(SUM(balance),0) FROM users").fetchone()[0]
+        today = int(time.time()) - 86400
+        active24 = conn.execute("SELECT COUNT(*) FROM users WHERE last_seen > ?", (today,)).fetchone()[0]
     return {"users": users, "ads": ads, "tasks": tasks, "pending_wd": pw,
-            "contact_req": cr, "paid": round(paid, 2), "views": views}
+            "contact_req": cr, "paid": round(paid, 2), "views": views,
+            "total_balance": round(total_balance, 2), "active24": active24,
+            "uptime": int(time.time() - START_TIME),
+            "heartbeat": HEARTBEAT_STATS}
 
 
 @app.get("/api/admin/ads")
@@ -959,10 +1034,8 @@ async def adm_ads_list(user_id: int):
     out = []
     for r in rows:
         d = dict(r)
-        try:
-            d["media"] = json.loads(d.get("media_json") or "[]")
-        except Exception:
-            d["media"] = []
+        try: d["media"] = json.loads(d.get("media_json") or "[]")
+        except Exception: d["media"] = []
         out.append(d)
     return out
 
@@ -1033,10 +1106,8 @@ async def adm_withdrawals(user_id: int, status: str = None):
     result = []
     for r in rows:
         d = dict(r)
-        try:
-            d["account"] = json.loads(d.get("account_json") or "{}").get("fields", {})
-        except Exception:
-            d["account"] = {}
+        try: d["account"] = json.loads(d.get("account_json") or "{}").get("fields", {})
+        except Exception: d["account"] = {}
         result.append(d)
     return result
 
@@ -1057,8 +1128,7 @@ async def adm_wd_approve(wid: int, req: Request):
                          json={"chat_id": row["user_id"],
                                "text": f"✅ تمت الموافقة على سحبك `${row['amount']:.2f}`",
                                "parse_mode": "Markdown"})
-    except Exception:
-        pass
+    except Exception: pass
     return {"ok": True}
 
 
@@ -1081,8 +1151,7 @@ async def adm_wd_reject(wid: int, req: Request):
                          json={"chat_id": row["user_id"],
                                "text": f"❌ رُفض سحبك وأُرجع `${row['amount']:.2f}` لرصيدك",
                                "parse_mode": "Markdown"})
-    except Exception:
-        pass
+    except Exception: pass
     return {"ok": True}
 
 
@@ -1169,16 +1238,18 @@ async def adm_broadcast(req: Request):
                 if r.json().get("ok"):
                     sent += 1
                 await asyncio.sleep(0.05)
-            except Exception:
-                pass
+            except Exception: pass
     return {"ok": True, "sent": sent}
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🤖 /start
+# 🤖 /start — يعمل للجميع
 # ═══════════════════════════════════════════════════════════════════════
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     u = update.effective_user
+    if not rate_ok(u.id, max_hits=5, window=10):
+        return
+
     user_dict = {"id": u.id, "username": u.username, "first_name": u.first_name,
                  "last_name": u.last_name, "language_code": u.language_code,
                  "is_premium": getattr(u, "is_premium", False)}
@@ -1189,6 +1260,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ref = int(sp[4:])
         except ValueError:
             pass
+
     get_or_create_user(user_dict, ref)
 
     with db() as conn:
@@ -1221,9 +1293,11 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     premium = "⭐ " if getattr(u, "is_premium", False) else ""
     owner_badge = "👑 " if is_owner else ""
 
+    rank, total = user_rank(u.id)
+
     welcome = (
         f"✨━━━━━━━━━━━━━━━━━━━━━━━✨\n"
-        f"      💎 *AdVault Pro* 💎\n"
+        f"      💎 *AdVault Pro VIP* 💎\n"
         f"    _{L['welcome_sub']}_\n"
         f"✨━━━━━━━━━━━━━━━━━━━━━━━✨\n\n"
         f"{owner_badge}{premium}*{L['welcome_title']} {u.first_name or ''}*\n"
@@ -1235,13 +1309,17 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"│ 👁️ *{L['ads_today']}:* `{ads_today}/{daily_limit}`\n"
         f"│ 🤝 *{L['referrals']}:* `{referrals}`\n"
         f"│ 🔥 *{L['streak']}:* `{streak}`\n"
+        f"│ 🏆 *{L['rank']}:* `{rank}/{total}`\n"
         f"╰─────────────────────╯\n\n"
         f"⚡ *{L['welcome_sub']}*\n"
         f"• 👁️ `${ad_reward}` / ad\n"
-        f"• 🤝 `${ref_bonus}` / {L['referrals']}\n"
+        f"• 🤝 `${ref_bonus}` / referral\n"
         f"• 💸 {L['min_withdraw']}: `${min_w}`\n"
     )
 
+    # ═════════════════════════════════════════════════════════
+    # الأزرار للجميع — بلا استثناء
+    # ═════════════════════════════════════════════════════════
     kb = [
         [InlineKeyboardButton(f"🚀 {L['open_app']}", web_app=WebAppInfo(url=WEBAPP_URL))],
         [InlineKeyboardButton(f"🤝 {L['my_ref']}", callback_data="get_ref"),
@@ -1291,16 +1369,29 @@ async def cmd_balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not row:
         await update.message.reply_text("افتح التطبيق أولاً")
         return
+    rank, total = user_rank(uid)
     await update.message.reply_text(
         f"💰 `${row['balance']:.2f}`\n📊 `${row['total_earned']:.2f}`\n"
-        f"👁️ `{row['ads_today']}/{get_setting('daily_limit')}`", parse_mode="Markdown")
+        f"👁️ `{row['ads_today']}/{get_setting('daily_limit')}`\n"
+        f"🏆 `{rank}/{total}`", parse_mode="Markdown")
 
 
 async def cmd_ref(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     link = f"https://t.me/{context.bot.username}?start=ref_{uid}"
     await update.message.reply_text(
-        f"🤝 `{link}`\n\n💰 `${get_setting('referral_bonus')}` / صديق",
+        f"🤝 `{link}`\n\n💰 `${get_setting('referral_bonus')}` / referral",
+        parse_mode="Markdown")
+
+
+async def cmd_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update.effective_user.id):
+        return
+    up = int(time.time() - START_TIME)
+    await update.message.reply_text(
+        f"📊 *Uptime:* `{timedelta(seconds=up)}`\n"
+        f"💓 *Internal pings:* `{HEARTBEAT_STATS['internal']}`\n"
+        f"🌐 *External pings:* `{HEARTBEAT_STATS['external']}`",
         parse_mode="Markdown")
 
 
@@ -1356,10 +1447,8 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 await context.bot.send_message(chat_id=row["user_id"],
                     text=f"✅ `${row['amount']:.2f}` approved", parse_mode="Markdown")
-            except Exception:
-                pass
-        await q.answer("✅", show_alert=True)
-        return
+            except Exception: pass
+        await q.answer("✅", show_alert=True); return
     if d.startswith("wd_no_"):
         wid = int(d.split("_")[-1])
         with db() as conn:
@@ -1373,21 +1462,25 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 await context.bot.send_message(chat_id=row["user_id"],
                     text=f"❌ `${row['amount']:.2f}` rejected", parse_mode="Markdown")
-            except Exception:
-                pass
-        await q.answer("❌", show_alert=True)
-        return
+            except Exception: pass
+        await q.answer("❌", show_alert=True); return
 
 
 async def set_bot_commands(app_bot):
     try:
         await app_bot.bot.set_my_commands([
-            BotCommand("start", "🏠 Start"),
-            BotCommand("balance", "💰 Balance"),
-            BotCommand("ref", "🤝 Referral"),
+            BotCommand("start", "🏠 Start / ابدأ"),
+            BotCommand("balance", "💰 Balance / رصيدي"),
+            BotCommand("ref", "🤝 Referral / الإحالة"),
         ])
-    except Exception:
-        pass
+        try:
+            await app_bot.bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(text="💎 Open App",
+                                              web_app=WebAppInfo(url=WEBAPP_URL)))
+        except Exception:
+            pass
+    except Exception as e:
+        print(f"commands: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1395,7 +1488,7 @@ async def set_bot_commands(app_bot):
 # ═══════════════════════════════════════════════════════════════════════
 async def run_bot():
     if not BOT_TOKEN:
-        print("⚠️ BOT_TOKEN غير مضبوط")
+        print("⚠️ BOT_TOKEN missing")
         return
     app_bot = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -1403,23 +1496,50 @@ async def run_bot():
     app_bot.add_handler(CommandHandler("admin", cmd_admin))
     app_bot.add_handler(CommandHandler("balance", cmd_balance))
     app_bot.add_handler(CommandHandler("ref", cmd_ref))
+    app_bot.add_handler(CommandHandler("stats", cmd_stats))
     app_bot.add_handler(CallbackQueryHandler(callback_get_ref, pattern=r"^get_ref$"))
     app_bot.add_handler(CallbackQueryHandler(callback_my_balance, pattern=r"^my_balance$"))
     app_bot.add_handler(CallbackQueryHandler(callback_show_lb, pattern=r"^show_lb$"))
     app_bot.add_handler(CallbackQueryHandler(admin_callback, pattern=r"^(wd_ok_|wd_no_)"))
 
     await app_bot.initialize()
+
+    # ✅ حذف أي webhook أو تحديثات معلّقة قبل بدء polling
+    try:
+        await app_bot.bot.delete_webhook(drop_pending_updates=True)
+        print("✅ Webhook cleared")
+    except Exception as e:
+        print(f"⚠️ delete_webhook: {e}")
+
     await set_bot_commands(app_bot)
     await app_bot.start()
-    await app_bot.updater.start_polling()
-    print("✅ البوت يعمل...")
+
+    # ✅ حلقة polling مع إعادة محاولة عند Conflict
+    while True:
+        try:
+            await app_bot.updater.start_polling(
+                drop_pending_updates=True,
+                allowed_updates=Update.ALL_TYPES,
+                poll_interval=1.0,
+                timeout=30,
+            )
+            print("✅ Polling started")
+            break
+        except Conflict:
+            print("⚠️ Conflict — instance أخرى تعمل، أعيد المحاولة بعد 5s")
+            await asyncio.sleep(5)
+        except Exception as e:
+            print(f"⚠️ polling: {e}")
+            await asyncio.sleep(5)
+
     print(f"📞 @{ADMIN_CONTACT}")
     while True:
         await asyncio.sleep(3600)
 
 
 async def run_web():
-    config = uvicorn.Config(app, host=HOST, port=PORT, log_level="info")
+    config = uvicorn.Config(app, host=HOST, port=PORT, log_level="warning",
+                            access_log=False, lifespan="on")
     server = uvicorn.Server(config)
     await server.serve()
 
@@ -1429,8 +1549,15 @@ async def main():
     print(f"🌐 {WEBAPP_URL}")
     print(f"👑 {ADMIN_IDS}")
     print(f"🤖 @{BOT_USERNAME}")
-    print(f"📞 @{ADMIN_CONTACT}")
-    await asyncio.gather(run_bot(), run_web())
+    print(f"💓 Heartbeat: {PING_INTERVAL}s")
+
+    # تشغيل الويب + البوت + النبضات في نفس time loop
+    await asyncio.gather(
+        run_web(),
+        run_bot(),
+        internal_heartbeat(),
+        external_heartbeat(),
+    )
 
 
 if __name__ == "__main__":
