@@ -34,7 +34,7 @@ from telegram.ext import (
 # ═══════════════════════════════════════════════════════════════════════
 # ⚙️ الإعدادات
 # ═══════════════════════════════════════════════════════════════════════
-BOT_TOKEN      = os.getenv("BOT_TOKEN", "8992305691:AAHsC05CChVGUGHD3ZmS2huPWNPT2Qy65fo")
+BOT_TOKEN      = os.getenv("BOT_TOKEN", "8909959176:AAHtOv4alGndeFTY0_Juqf5hpLsQV5z-hlc")
 WEBAPP_URL     = os.getenv("WEBAPP_URL", "https://xeonbots.onrender.com/")
 BOT_USERNAME   = os.getenv("BOT_USERNAME", "Cashbackigfbot").lstrip("@")
 ADMIN_CONTACT  = os.getenv("ADMIN_CONTACT", "no_vi1").lstrip("@")
