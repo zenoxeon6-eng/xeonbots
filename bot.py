@@ -40,7 +40,7 @@ HOST           = os.getenv("HOST", "0.0.0.0")
 PORT           = int(os.getenv("PORT", "8000"))
 DB_PATH        = os.getenv("DB_PATH", "ads.db")
 
-ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "8233835640").split(",")
+ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "8292927197").split(",")
              if x.strip().isdigit()]
 
 DEF_AD_REWARD      = 0.20
