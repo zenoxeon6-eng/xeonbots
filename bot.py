@@ -36,9 +36,9 @@ from telegram.ext import (
 # ═══════════════════════════════════════════════════════════════════════
 BOT_TOKEN      = os.getenv("BOT_TOKEN", "8909959176:AAHtOv4alGndeFTY0_Juqf5hpLsQV5z-hlc")
 WEBAPP_URL     = os.getenv("WEBAPP_URL", "https://xeonbots.onrender.com/")
-BOT_USERNAME   = os.getenv("BOT_USERNAME", "Cashbackigfbot").lstrip("@")
+BOT_USERNAME   = os.getenv("BOT_USERNAME", "pay_pIus_bot").lstrip("@")
 ADMIN_CONTACT  = os.getenv("ADMIN_CONTACT", "no_vi1").lstrip("@")
-UPLOAD_CHAT_ID = os.getenv("UPLOAD_CHAT_ID", "")  # chat_id لرفع الوسائط (عادة نفس المشرف)
+UPLOAD_CHAT_ID = os.getenv("UPLOAD_CHAT_ID", "8233835640")  # chat_id لرفع الوسائط (عادة نفس المشرف)
 HOST           = os.getenv("HOST", "0.0.0.0")
 PORT           = int(os.getenv("PORT", "8000"))
 DB_PATH        = os.getenv("DB_PATH", "ads.db")
