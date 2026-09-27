@@ -4,12 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#05050f" />
-<title>💎 AdVault Pro</title>
+<title>💎 AdVault Pro VIP</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   :root{
-    --gold:#ffd700;--gold-2:#ffaa00;--gold-3:#b8860b;
+    --gold:#ffd700;--gold-2:#ffaa00;--gold-3:#b8860b;--gold-glow:rgba(255,215,0,0.5);
     --bg:#05050f;--bg-2:#0a0a1a;--bg-3:#14142b;
     --glass:rgba(255,255,255,0.05);--glass-2:rgba(255,255,255,0.09);
     --border:rgba(255,215,0,0.18);--border-2:rgba(255,215,0,0.35);
@@ -53,35 +53,33 @@
   .lang-btn{padding:8px 12px;background:var(--glass);border:1px solid var(--border);border-radius:12px;
     cursor:pointer;font-family:inherit;color:var(--gold);font-weight:800;font-size:12px;}
 
+  /* Heartbeat */
+  .hb{position:fixed;top:14px;left:14px;z-index:99;display:none;align-items:center;gap:6px;
+    padding:6px 12px;background:rgba(0,230,118,0.12);border:1px solid rgba(0,230,118,0.3);
+    border-radius:14px;font-size:10px;font-weight:800;color:var(--green);backdrop-filter:blur(10px);}
+  .hb.on{display:flex;}
+  .hb-dot{width:8px;height:8px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 10px var(--green);animation:hbPulse 1s ease-in-out infinite;}
+  @keyframes hbPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.4);opacity:0.6;}}
+
   /* Wallet Card */
-  .wallet-card{
-    position:relative;padding:24px 20px;margin-bottom:18px;
+  .wallet-card{position:relative;padding:24px 20px;margin-bottom:18px;
     background:linear-gradient(135deg,#1a1a3a,#0a0a1a);
     border-radius:26px;overflow:hidden;
     box-shadow:0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
-    border:1px solid rgba(255,215,0,0.25);
-  }
-  .wallet-card::before{
-    content:"";position:absolute;inset:0;
-    background:
-      radial-gradient(circle at 20% 0%,rgba(255,215,0,0.25),transparent 50%),
-      radial-gradient(circle at 80% 100%,rgba(168,85,247,0.2),transparent 50%);
-    pointer-events:none;
-  }
-  .wallet-card::after{
-    content:"";position:absolute;top:-50%;right:-50%;width:200%;height:200%;
+    border:1px solid rgba(255,215,0,0.25);}
+  .wallet-card::before{content:"";position:absolute;inset:0;
+    background:radial-gradient(circle at 20% 0%,rgba(255,215,0,0.25),transparent 50%),
+      radial-gradient(circle at 80% 100%,rgba(168,85,247,0.2),transparent 50%);pointer-events:none;}
+  .wallet-card::after{content:"";position:absolute;top:-50%;right:-50%;width:200%;height:200%;
     background:conic-gradient(from 0deg,transparent 0deg,rgba(255,215,0,0.15) 60deg,transparent 120deg);
-    animation:rotate 12s linear infinite;pointer-events:none;
-  }
+    animation:rotate 12s linear infinite;pointer-events:none;}
   @keyframes rotate{to{transform:rotate(360deg);}}
   .wallet-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;position:relative;z-index:2;}
-  .wallet-brand{font-size:14px;font-weight:900;letter-spacing:2px;color:var(--gold);
-    text-shadow:0 0 20px rgba(255,215,0,0.5);}
-  .wallet-chip{
-    width:44px;height:34px;border-radius:8px;
+  .wallet-brand{font-size:14px;font-weight:900;letter-spacing:2px;color:var(--gold);text-shadow:0 0 20px rgba(255,215,0,0.5);}
+  .wallet-chip{width:44px;height:34px;border-radius:8px;
     background:linear-gradient(135deg,#f5d76e,#b8860b 50%,#f5d76e);
-    position:relative;box-shadow:inset 0 0 6px rgba(0,0,0,0.5);
-  }
+    position:relative;box-shadow:inset 0 0 6px rgba(0,0,0,0.5);}
   .wallet-chip::before{content:"";position:absolute;inset:6px;border-radius:4px;border:1px solid rgba(0,0,0,0.3);}
   .wallet-chip::after{content:"";position:absolute;inset:6px;
     background:linear-gradient(90deg,transparent 45%,rgba(0,0,0,0.35) 50%,transparent 55%);}
@@ -122,12 +120,10 @@
   .section-title{font-size:15px;font-weight:800;margin:22px 0 12px;display:flex;align-items:center;gap:8px;}
   .section-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border-2),transparent);margin-inline-start:8px;}
 
-  /* Ad Card Big */
-  .ad-hero{
-    padding:0;margin-bottom:18px;border-radius:26px;overflow:hidden;
+  /* Ad Hero */
+  .ad-hero{padding:0;margin-bottom:18px;border-radius:26px;overflow:hidden;
     background:linear-gradient(160deg,rgba(168,85,247,0.15),rgba(59,130,246,0.08));
-    border:1px solid rgba(168,85,247,0.3);position:relative;
-  }
+    border:1px solid rgba(168,85,247,0.3);position:relative;animation:fadeSlide 0.35s ease;}
   .ad-hero-media{width:100%;height:220px;background:#000;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
   .ad-hero-media img,.ad-hero-media video{width:100%;height:100%;object-fit:cover;}
   .ad-hero-media .placeholder{font-size:60px;}
@@ -140,13 +136,6 @@
     border:1px solid rgba(59,130,246,0.4);color:var(--blue);border-radius:12px;font-size:13px;font-weight:700;
     margin-bottom:14px;cursor:pointer;text-decoration:none;}
   .ad-hero-redirect:active{transform:scale(0.96);}
-
-  /* Media Carousel */
-  .media-carousel{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 14px 12px;}
-  .media-carousel::-webkit-scrollbar{display:none;}
-  .media-carousel img,.media-carousel video{
-    width:100px;height:100px;border-radius:14px;object-fit:cover;flex-shrink:0;
-    scroll-snap-align:start;border:1px solid var(--border);}
 
   /* Ad Row */
   .ad-row{display:flex;align-items:center;gap:12px;padding:14px;
@@ -167,9 +156,9 @@
     display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
   .ad-overlay.active{display:flex;}
   .overlay-media{max-width:100%;max-height:50vh;border-radius:20px;margin-bottom:16px;box-shadow:0 12px 40px rgba(0,0,0,0.6);object-fit:contain;}
-  .overlay-carousel{display:flex;gap:10px;overflow-x:auto;max-width:100%;padding:10px 0;margin-bottom:10px;}
+  .overlay-carousel{display:flex;gap:10px;overflow-x:auto;max-width:100%;padding:10px 0;margin-bottom:10px;scroll-snap-type:x mandatory;}
   .overlay-carousel::-webkit-scrollbar{display:none;}
-  .overlay-carousel img,.overlay-carousel video{width:90px;height:90px;border-radius:14px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);}
+  .overlay-carousel img,.overlay-carousel video{width:90px;height:90px;border-radius:14px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);scroll-snap-align:start;}
   .ad-timer-circle{position:relative;width:140px;height:140px;margin-bottom:20px;}
   .ad-timer-circle svg{transform:rotate(-90deg);}
   .ad-timer-circle circle{fill:none;stroke-width:8;}
@@ -212,7 +201,7 @@
   /* Leaderboard */
   .lb-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--glass);
     border:1px solid var(--border);border-radius:16px;margin-bottom:8px;}
-  .lb-row.me{background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,170,0,0.06));border-color:var(--border-2);}
+  .lb-row.me{background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,170,0,0.06));border-color:var(--border-2);box-shadow:0 0 20px rgba(255,215,0,0.15);}
   .lb-rank{font-size:15px;font-weight:900;width:32px;text-align:center;flex-shrink:0;}
   .lb-rank.g1{color:#ffd700;}.lb-rank.g2{color:#c0c0c0;}.lb-rank.g3{color:#cd7f32;}
   .lb-avatar{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold-2));
@@ -237,6 +226,10 @@
   .id-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(0,0,0,0.3);
     border:1px solid rgba(255,255,255,0.1);border-radius:12px;
     font-family:"SF Mono",monospace;font-size:12px;color:var(--text-dim);cursor:pointer;}
+  .rank-badge{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:8px 18px;
+    background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,170,0,0.08));
+    border:1px solid var(--border-2);border-radius:14px;
+    color:var(--gold);font-weight:800;font-size:13px;}
 
   .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
   .stat-card{padding:16px;text-align:center;
@@ -349,7 +342,7 @@
   .status-pill.red{background:rgba(255,82,82,0.15);color:var(--red);}
   .status-pill.orange{background:rgba(255,170,0,0.15);color:var(--gold);}
 
-  /* Media Upload Grid */
+  /* Media Grid */
   .media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
   .media-thumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#000;}
   .media-thumb img,.media-thumb video{width:100%;height:100%;object-fit:cover;}
@@ -425,10 +418,11 @@
 <div class="loader" id="loader">
   <div class="loader-logo">💎</div>
   <div class="loader-spinner"></div>
-  <div class="loader-text">ADVAULT PRO</div>
+  <div class="loader-text">ADVAULT PRO VIP</div>
 </div>
 
 <div class="particles" id="particles"></div>
+<div class="hb" id="hbIndicator"><div class="hb-dot"></div><span id="hbText">LIVE</span></div>
 
 <div id="app">
   <!-- HEADER -->
@@ -450,12 +444,12 @@
   <div class="tab active" id="tab-home">
     <div class="wallet-card">
       <div class="wallet-top">
-        <div class="wallet-brand">💎 ADVAULT</div>
+        <div class="wallet-brand">💎 ADVAULT VIP</div>
         <div class="wallet-chip"></div>
       </div>
       <div class="wallet-label" id="wBalanceLabel">Available Balance</div>
       <div class="wallet-amount" id="balance">$0.00</div>
-      <div class="wallet-number" id="walletNumber">•••• •••• •••• <span id="walletIdShort">0000</span></div>
+      <div class="wallet-number">•••• •••• •••• <span id="walletIdShort">0000</span></div>
       <div class="wallet-stats">
         <div class="wallet-stat"><span id="wTotalLabel">Total Earned</span><b id="totalEarned">$0.00</b></div>
         <div class="wallet-stat"><span id="wReferralsLabel">Referrals</span><b id="walletRefs">0</b></div>
@@ -540,6 +534,7 @@
       <div class="profile-name" id="profileName">User</div>
       <div class="profile-handle" id="profileHandle">@user</div>
       <div class="id-pill" id="profileId" onclick="copyId()">🆔 <span>—</span></div>
+      <div><div class="rank-badge" id="rankBadge">🏆 <span>#— / —</span></div></div>
     </div>
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value" id="statBalance">$0.00</div><div class="stat-label">Balance</div></div>
@@ -580,7 +575,7 @@
   <div class="tab" id="tab-admin">
     <div class="admin-header">
       <div class="admin-crown-icon">👑</div>
-      <div class="admin-title">لوحة التحكم</div>
+      <div class="admin-title">لوحة التحكم VIP</div>
       <div class="admin-subtitle">Full Control Panel</div>
     </div>
     <div class="admin-tabs" id="adminTabs">
@@ -647,6 +642,7 @@ let countries = {}, selectedCountry = "", selectedMethod = "";
 let currentTab = "home", currentAdminTab = "stats";
 let LANGS = {}, lang = "ar";
 let newAdMedia = [];
+let hbTimer = null;
 
 window.__BOT_USERNAME__ = "__BOT_USERNAME_PLACEHOLDER__";
 window.__ADMIN_CONTACT__ = "__ADMIN_CONTACT_PLACEHOLDER__";
@@ -713,7 +709,7 @@ function copyRef(){
 function shareRef(){
   if (!user) return;
   const link = buildRefLink(user.user_id);
-  const text = `🎁 Join AdVault Pro!\n${link}`;
+  const text = `🎁 Join AdVault Pro VIP!\n${link}`;
   const u = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
   if (tg) tg.openTelegramLink(u); else window.open(u, "_blank");
 }
@@ -743,6 +739,30 @@ function closeModal(){ document.getElementById("modal").classList.remove("active
 document.getElementById("modal").onclick = (e)=>{ if(e.target.id==="modal") closeModal(); };
 
 // ═══════════════════════════════════════════════════════════════════════
+// HEARTBEAT
+// ═══════════════════════════════════════════════════════════════════════
+async function ping(){
+  try {
+    const res = await fetch("/health", {cache: "no-store"});
+    if (res.ok) {
+      const d = await res.json();
+      const hb = document.getElementById("hbIndicator");
+      const txt = document.getElementById("hbText");
+      const up = d.uptime || 0;
+      const h = Math.floor(up/3600);
+      const m = Math.floor((up%3600)/60);
+      txt.textContent = `LIVE • ${h}h ${m}m`;
+      hb.classList.add("on");
+    }
+  } catch {}
+}
+
+function startHeartbeat(){
+  ping();
+  hbTimer = setInterval(ping, 10000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // LANGUAGE
 // ═══════════════════════════════════════════════════════════════════════
 async function loadLang(code){
@@ -758,9 +778,7 @@ function applyLang(){
   if (!L || !L.open_app) return;
   document.documentElement.dir = L.dir || "ar";
   document.documentElement.lang = lang;
-
   const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-
   setText("wBalanceLabel", L.balance || "Balance");
   setText("wTotalLabel", L.total_earned || "Total");
   setText("wReferralsLabel", L.referrals || "Referrals");
@@ -798,11 +816,10 @@ async function toggleLang(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// USER UI
+// UI UPDATE
 // ═══════════════════════════════════════════════════════════════════════
 function updateUI(u){
   user = u;
-
   document.getElementById("balance").textContent = money(u.balance);
   document.getElementById("totalEarned").textContent = money(u.total_earned);
   document.getElementById("walletRefs").textContent = u.referrals;
@@ -875,21 +892,29 @@ function updateUI(u){
     document.getElementById("mainNav").appendChild(btn);
   }
 
-  if (u.lang && u.lang !== lang) {
-    loadLang(u.lang);
-  }
+  if (u.lang && u.lang !== lang) loadLang(u.lang);
+  loadRank();
+}
+
+async function loadRank(){
+  if (!user) return;
+  try {
+    const r = await api("/api/rank?user_id=" + user.user_id);
+    document.getElementById("rankBadge").innerHTML = `🏆 <span>#${r.rank} / ${r.total}</span>`;
+  } catch {}
 }
 
 // ═══════════════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════════════
 async function init(){
+  startHeartbeat();
   try {
     const initData = tg?.initData || "";
     if (!initData){ toast("Open inside Telegram", "error"); hideLoader(); return; }
     user = await api("/api/auth", {method:"POST", body:JSON.stringify({initData})});
-    if (user.lang) { await loadLang(user.lang); }
-    else { await loadLang("ar"); }
+    if (user.lang) await loadLang(user.lang);
+    else await loadLang("ar");
     updateUI(user);
     await Promise.all([loadAds(), loadTasks(), loadLeaderboard(), loadCountries(), loadWithdrawals()]);
     hideLoader();
@@ -976,7 +1001,6 @@ async function watchAd(adId){
   overlayTitle.textContent = ad.title;
   overlayDesc.textContent = ad.description || "";
 
-  // Media display
   if (ad.media_count === 0) {
     overlayMedia.innerHTML = `<div style="font-size:80px;margin-bottom:20px;">🔗</div>`;
     timerWrap.style.display = "block";
@@ -990,7 +1014,6 @@ async function watchAd(adId){
       timerWrap.style.display = "block";
     }
   } else {
-    // Carousel
     overlayMedia.innerHTML = `<div class="overlay-carousel">${
       ad.media.map(m => m.type === "video"
         ? `<video src="${m.url}" muted playsinline autoplay loop></video>`
@@ -999,7 +1022,6 @@ async function watchAd(adId){
     timerWrap.style.display = "block";
   }
 
-  // Open redirect if any
   if (ad.redirect_url && tg) tg.openLink(ad.redirect_url);
 
   const total = ad.duration || 15;
@@ -1115,7 +1137,7 @@ async function loadLeaderboard(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// COUNTRIES + WITHDRAWAL
+// WITHDRAWAL
 // ═══════════════════════════════════════════════════════════════════════
 async function loadCountries(){
   countries = await api("/api/countries");
@@ -1241,7 +1263,7 @@ async function sendContact(){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// TAB SWITCHER
+// TABS
 // ═══════════════════════════════════════════════════════════════════════
 function switchTab(tab){
   if (tab === currentTab) return;
@@ -1295,15 +1317,24 @@ async function loadAdminTab(tab){
 
 async function renderAdminStats(c){
   const s = await api("/api/admin/stats?user_id=" + user.user_id);
+  const upH = Math.floor((s.uptime||0)/3600);
+  const upM = Math.floor(((s.uptime||0)%3600)/60);
+  const hb = s.heartbeat || {};
   c.innerHTML = `<div class="admin-stat-grid">
     <div class="admin-stat"><b>${s.users}</b><span>👥 Users</span></div>
+    <div class="admin-stat"><b>${s.active24}</b><span>🟢 Active 24h</span></div>
     <div class="admin-stat"><b>${s.ads}</b><span>📢 Active Ads</span></div>
     <div class="admin-stat"><b>${s.views}</b><span>👁️ Views</span></div>
     <div class="admin-stat"><b>${s.tasks}</b><span>📋 Tasks</span></div>
     <div class="admin-stat"><b>${s.pending_wd}</b><span>⏳ Withdrawals</span></div>
     <div class="admin-stat"><b>${s.contact_req}</b><span>📞 Messages</span></div>
+    <div class="admin-stat"><b>$${s.total_balance}</b><span>💵 Total Balances</span></div>
     <div class="admin-stat" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,170,0,0.05));border-color:var(--border-2);">
       <b style="font-size:28px;">$${s.paid.toFixed(2)}</b><span>💰 Total Paid</span>
+    </div>
+    <div class="admin-stat" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(0,230,118,0.12),rgba(0,230,118,0.04));border-color:rgba(0,230,118,0.3);">
+      <b style="font-size:18px;">💓 ${upH}h ${upM}m • ${hb.internal||0} pings</b>
+      <span>Uptime & Heartbeat</span>
     </div>
   </div>`;
 }
@@ -1381,9 +1412,7 @@ function adminCreateAdModal(){
   }, 50);
 }
 
-function pickMedia(){
-  document.getElementById("mediaInput")?.click();
-}
+function pickMedia(){ document.getElementById("mediaInput")?.click(); }
 
 async function handleMediaPick(e){
   const files = Array.from(e.target.files || []);
@@ -1423,10 +1452,7 @@ function renderMediaGrid(){
     </div>`;
 }
 
-function removeMedia(i){
-  newAdMedia.splice(i, 1);
-  renderMediaGrid();
-}
+function removeMedia(i){ newAdMedia.splice(i, 1); renderMediaGrid(); }
 
 async function adminToggleAd(id){
   try {
