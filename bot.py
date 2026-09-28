@@ -1,17 +1,3 @@
-"""
-════════════════════════════════════════════════════════════════════════
-💎 AdVault Pro VIP — النسخة الجبارة
-════════════════════════════════════════════════════════════════════════
-✅ يعمل للجميع (زر التطبيق يظهر للكل)
-✅ نبضة كل 10 ثواني (منع Render من النوم)
-✅ إصلاح Conflict تلقائيًا
-✅ إعلانات متعددة الوسائط (فيديو + صور)
-✅ رفع مباشر من التطبيق
-✅ متعدد اللغات + بطاقة محفظة
-✅ Anti-spam + Rate limiting
-════════════════════════════════════════════════════════════════════════
-"""
-
 import os, hmac, json, time, sqlite3, hashlib, asyncio, re, shutil, tempfile
 from urllib.parse import parse_qsl
 from datetime import datetime, timezone, timedelta
@@ -25,16 +11,16 @@ import uvicorn
 
 from telegram import (
     Update, InlineKeyboardButton, InlineKeyboardMarkup,
-    WebAppInfo, BotCommand, MenuButtonWebApp, MenuButtonCommands,
+    WebAppInfo, BotCommand, MenuButtonWebApp,
 )
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters, ContextTypes,
 )
-from telegram.error import Conflict, TelegramError, RetryAfter
+from telegram.error import Conflict, TelegramError
 
 # ═══════════════════════════════════════════════════════════════════════
-# ⚙️ الإعدادات
+# ⚙️ الإعدادات العامة
 # ═══════════════════════════════════════════════════════════════════════
 BOT_TOKEN      = os.getenv("BOT_TOKEN", "8909959176:AAHtOv4alGndeFTY0_Juqf5hpLsQV5z-hlc")
 WEBAPP_URL     = os.getenv("WEBAPP_URL", "https://xeonbots.onrender.com/").rstrip("/") + "/"
@@ -54,16 +40,16 @@ DEF_DAILY_LIMIT    = 10
 DEF_MIN_WITHDRAW   = 10.00
 DEF_REFERRAL_BONUS = 0.50
 DEF_DAILY_BONUS    = 0.10
+DEF_TASK_WAIT      = 10
 
 START_TIME = time.time()
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🛡️ Anti-Spam (Rate Limiting in memory)
+# 🛡️ Anti-Spam Rate Limiter
 # ═══════════════════════════════════════════════════════════════════════
 RATE_LIMIT = defaultdict(lambda: deque(maxlen=20))
 
 def rate_ok(user_id, max_hits=10, window=10):
-    """يرجع True إذا كان ضمن الحد المسموح"""
     now = time.time()
     q = RATE_LIMIT[user_id]
     while q and now - q[0] > window:
@@ -79,118 +65,132 @@ def rate_ok(user_id, max_hits=10, window=10):
 # ═══════════════════════════════════════════════════════════════════════
 LANGS = {
     "ar": {
-        "dir": "rtl",
+        "dir": "rtl", "name": "العربية",
         "welcome_title": "مرحباً بك",
         "welcome_sub": "منصة الربح من الإعلانات الأولى",
-        "identifier": "المعرّف",
-        "username": "اسم المستخدم",
-        "balance": "رصيدك",
-        "total_earned": "إجمالي أرباحك",
-        "ads_today": "إعلانات اليوم",
-        "referrals": "إحالاتك",
-        "streak": "أيام متتالية",
+        "identifier": "المعرّف", "username": "اسم المستخدم",
+        "balance": "رصيدك", "total_earned": "إجمالي أرباحك",
+        "ads_today": "إعلانات اليوم", "referrals": "إحالاتك",
+        "streak": "أيام متتالية", "rank": "ترتيبك",
         "open_app": "افتح التطبيق وابدأ الربح",
-        "my_ref": "رابط الإحالة",
-        "my_balance": "رصيدي",
-        "contact": "تواصل معنا",
-        "leaderboard": "المتصدرون",
+        "my_ref": "رابط الإحالة", "my_balance": "رصيدي",
+        "contact": "تواصل معنا", "leaderboard": "المتصدرون",
         "admin_panel": "لوحة التحكم",
-        "watch_now": "شاهد الآن واربح",
-        "start_ad": "ابدأ مشاهدة الإعلان",
-        "no_ads": "لا إعلانات متاحة حاليًا",
-        "daily_reward": "المكافأة اليومية",
-        "claim": "استلام",
-        "tasks": "المهام",
-        "wallet": "المحفظة",
-        "profile": "حسابي",
-        "home": "الرئيسية",
-        "withdraw": "سحب",
-        "amount": "المبلغ",
-        "send_request": "إرسال طلب السحب",
-        "min_withdraw": "الحد الأدنى",
-        "country": "اختر دولتك",
-        "method": "طريقة السحب",
-        "save_data": "حفظ البيانات",
-        "open_link": "فتح الرابط",
-        "back": "رجوع",
-        "welcome_back": "أهلاً بعودتك",
-        "rank": "ترتيبك",
-        "select_lang": "اختر اللغة",
+        "watch_now": "شاهد الآن واربح", "start_ad": "ابدأ مشاهدة الإعلان",
+        "no_ads": "لا إعلانات متاحة",
+        "all_watched": "شاهدت كل الإعلانات المتاحة، عد لاحقًا",
+        "daily_reward": "المكافأة اليومية", "claim": "استلام", "wait": "انتظر",
+        "tasks": "المهام", "task_open": "افتح الرابط",
+        "task_opened": "تم فتح الرابط", "task_wait": "انتظر {} ثانية",
+        "task_ready": "استلم", "task_done": "تم",
+        "wallet": "المحفظة", "profile": "حسابي", "home": "الرئيسية", "top": "المتصدرون",
+        "withdraw": "سحب", "amount": "المبلغ",
+        "send_request": "إرسال طلب السحب", "min_withdraw": "الحد الأدنى",
+        "country": "اختر دولتك", "method": "طريقة السحب", "save_data": "حفظ البيانات",
+        "open_link": "فتح الرابط", "back": "رجوع",
+        "welcome_back": "أهلاً بعودتك", "select_lang": "اختر اللغة",
+        "contact_us": "تواصل معنا", "contact_desc": "لأي استفسار أو طلب إعلان",
+        "send": "إرسال", "direct_contact": "تواصل مباشر", "open_admin": "فتح شات الإدارة",
+        "loading": "جارٍ التحميل", "copy": "نسخ", "share": "مشاركة", "copied": "تم النسخ",
+        "error": "خطأ", "success": "تم بنجاح",
+        "no_tasks": "لا مهام متاحة", "no_history": "لا طلبات سابقة",
+        "no_users": "لا مستخدمين", "no_messages": "لا رسائل",
+        "no_withdrawals": "لا طلبات سحب", "history": "آخر الطلبات",
+        "pending": "معلق", "approved": "موافق", "rejected": "مرفوض",
+        "claim_done": "استلمت المكافأة",
+        "not_completed": "أكمل الإعلان لتحصل على المكافأة",
+        "limit_reached": "وصلت الحد اليومي، عد غدًا",
+        "watch_now_btn": "شاهد الآن", "claim_btn": "استلم {}",
+        "watching": "جارٍ المشاهدة", "wait_txt": "انتظر", "done": "تم",
+        "sound_on": "اضغط لتفعيل الصوت",
     },
     "en": {
-        "dir": "ltr",
+        "dir": "ltr", "name": "English",
         "welcome_title": "Welcome",
         "welcome_sub": "The #1 ad-based earning platform",
-        "identifier": "ID",
-        "username": "Username",
-        "balance": "Balance",
-        "total_earned": "Total Earned",
-        "ads_today": "Ads Today",
-        "referrals": "Referrals",
-        "streak": "Streak",
+        "identifier": "ID", "username": "Username",
+        "balance": "Balance", "total_earned": "Total Earned",
+        "ads_today": "Ads Today", "referrals": "Referrals",
+        "streak": "Streak", "rank": "Your Rank",
         "open_app": "Open App & Start Earning",
-        "my_ref": "Referral Link",
-        "my_balance": "My Balance",
-        "contact": "Contact Us",
-        "leaderboard": "Leaderboard",
+        "my_ref": "Referral Link", "my_balance": "My Balance",
+        "contact": "Contact Us", "leaderboard": "Leaderboard",
         "admin_panel": "Admin Panel",
-        "watch_now": "Watch Now & Earn",
-        "start_ad": "Start Watching",
+        "watch_now": "Watch Now & Earn", "start_ad": "Start Watching",
         "no_ads": "No ads available",
-        "daily_reward": "Daily Reward",
-        "claim": "Claim",
-        "tasks": "Tasks",
-        "wallet": "Wallet",
-        "profile": "Profile",
-        "home": "Home",
-        "withdraw": "Withdraw",
-        "amount": "Amount",
-        "send_request": "Send Request",
-        "min_withdraw": "Minimum",
-        "country": "Country",
-        "method": "Method",
-        "save_data": "Save",
-        "open_link": "Open Link",
-        "back": "Back",
-        "welcome_back": "Welcome back",
-        "rank": "Your Rank",
-        "select_lang": "Select Language",
+        "all_watched": "You watched all available ads, come back later",
+        "daily_reward": "Daily Reward", "claim": "Claim", "wait": "Wait",
+        "tasks": "Tasks", "task_open": "Open Link",
+        "task_opened": "Link Opened", "task_wait": "Wait {}s",
+        "task_ready": "Claim", "task_done": "Done",
+        "wallet": "Wallet", "profile": "Profile", "home": "Home", "top": "Top",
+        "withdraw": "Withdraw", "amount": "Amount",
+        "send_request": "Send Withdraw Request", "min_withdraw": "Minimum",
+        "country": "Country", "method": "Method", "save_data": "Save Data",
+        "open_link": "Open Link", "back": "Back",
+        "welcome_back": "Welcome back", "select_lang": "Select Language",
+        "contact_us": "Contact Us", "contact_desc": "For inquiries or ad requests",
+        "send": "Send", "direct_contact": "Direct Contact", "open_admin": "Open Admin Chat",
+        "loading": "Loading", "copy": "Copy", "share": "Share", "copied": "Copied",
+        "error": "Error", "success": "Success",
+        "no_tasks": "No tasks available", "no_history": "No history",
+        "no_users": "No users", "no_messages": "No messages",
+        "no_withdrawals": "No withdrawals", "history": "History",
+        "pending": "Pending", "approved": "Approved", "rejected": "Rejected",
+        "claim_done": "Reward claimed",
+        "not_completed": "Complete the ad to earn reward",
+        "limit_reached": "Daily limit reached, come back tomorrow",
+        "watch_now_btn": "Watch Now", "claim_btn": "Claim {}",
+        "watching": "Watching", "wait_txt": "Wait", "done": "Done",
+        "sound_on": "Tap to enable sound",
     },
 }
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🌍 الدول
+# 🌍 الدول وطرق السحب
 # ═══════════════════════════════════════════════════════════════════════
 COUNTRIES = {
     "YE": {"name": "🇾🇪 اليمن", "flag": "🇾🇪", "label": "اليمن", "methods": [
         {"id": "jaib", "name": "💚 محفظة جيب", "fields": [
-            {"name": "wallet", "label": "رقم المحفظة", "placeholder": "7XXXXXXXX", "type": "tel", "required": True}]},
+            {"name": "wallet", "label": "رقم المحفظة", "placeholder": "7XXXXXXXX",
+             "type": "tel", "required": True}]},
         {"id": "onecash", "name": "💙 ون كاش", "fields": [
-            {"name": "wallet", "label": "رقم المحفظة", "placeholder": "7XXXXXXXX", "type": "tel", "required": True}]},
+            {"name": "wallet", "label": "رقم المحفظة", "placeholder": "7XXXXXXXX",
+             "type": "tel", "required": True}]},
         {"id": "kuraimi", "name": "🏦 بنك الكريمي", "fields": [
-            {"name": "account", "label": "رقم الحساب", "placeholder": "XXXX-XXXX-XXXX", "type": "text", "required": True}]},
+            {"name": "account", "label": "رقم الحساب", "placeholder": "XXXX-XXXX-XXXX",
+             "type": "text", "required": True}]},
     ]},
     "SA": {"name": "🇸🇦 السعودية", "flag": "🇸🇦", "label": "السعودية", "methods": [
         {"id": "card_topup", "name": "📱 شحن بطاقة", "fields": [
             {"name": "company", "label": "الشركة", "type": "select",
-             "options": [{"v": "stc", "l": "STC"}, {"v": "mobily", "l": "موبايلي"}, {"v": "zain", "l": "زين"}],
+             "options": [{"v": "stc", "l": "STC"},
+                         {"v": "mobily", "l": "موبايلي"},
+                         {"v": "zain", "l": "زين"}],
              "required": True},
-            {"name": "phone", "label": "رقم الهاتف", "placeholder": "05XXXXXXXX", "type": "tel", "required": True}]},
+            {"name": "phone", "label": "رقم الهاتف", "placeholder": "05XXXXXXXX",
+             "type": "tel", "required": True}]},
         {"id": "bank_iban", "name": "🏦 IBAN", "fields": [
-            {"name": "iban", "label": "رقم الآيبان", "placeholder": "SAXXXXXXXXXXXXXXXX", "type": "text", "required": True}]},
+            {"name": "iban", "label": "رقم الآيبان", "placeholder": "SAXXXXXXXXXXXXXXXX",
+             "type": "text", "required": True}]},
         {"id": "wallet_barcode", "name": "📸 باركود محفظة", "fields": [
-            {"name": "barcode", "label": "نص الباركود", "placeholder": "الصق الباركود", "type": "text", "required": True}]},
+            {"name": "barcode", "label": "نص الباركود", "placeholder": "الصق الباركود",
+             "type": "text", "required": True}]},
         {"id": "urpay", "name": "💳 UrPay", "fields": [
-            {"name": "urpay_id", "label": "رقم UrPay", "placeholder": "05XXXXXXXX", "type": "tel", "required": True}]},
+            {"name": "urpay_id", "label": "رقم UrPay", "placeholder": "05XXXXXXXX",
+             "type": "tel", "required": True}]},
     ]},
     "OTHER": {"name": "🌍 دولي", "flag": "🌍", "label": "دولي", "methods": [
         {"id": "paypal", "name": "💠 PayPal", "fields": [
-            {"name": "email", "label": "البريد الإلكتروني", "placeholder": "you@example.com", "type": "email", "required": True}]},
+            {"name": "email", "label": "البريد الإلكتروني", "placeholder": "you@example.com",
+             "type": "email", "required": True}]},
         {"id": "binance", "name": "🟡 Binance Pay", "fields": [
-            {"name": "binance_id", "label": "Binance ID", "placeholder": "123456789", "type": "text", "required": True}]},
+            {"name": "binance_id", "label": "Binance ID", "placeholder": "123456789",
+             "type": "text", "required": True}]},
         {"id": "usdt", "name": "💵 USDT (TRC20)", "fields": [
-            {"name": "wallet", "label": "عنوان المحفظة", "placeholder": "TXxxxx...", "type": "text", "required": True}]},
+            {"name": "wallet", "label": "عنوان المحفظة", "placeholder": "TXxxxx...",
+             "type": "text", "required": True}]},
     ]},
 }
 
@@ -252,6 +252,10 @@ def init_db():
             user_id INTEGER, task_id INTEGER, completed_at TEXT,
             PRIMARY KEY (user_id, task_id)
         );
+        CREATE TABLE IF NOT EXISTS task_clicks (
+            user_id INTEGER, task_id INTEGER, clicked_at TEXT,
+            PRIMARY KEY (user_id, task_id)
+        );
         CREATE TABLE IF NOT EXISTS user_ads (
             user_id INTEGER, ad_id INTEGER, watched_at TEXT,
             PRIMARY KEY (user_id, ad_id, watched_at)
@@ -273,6 +277,7 @@ def init_db():
         );
         CREATE INDEX IF NOT EXISTS idx_users_earned ON users(total_earned DESC);
         CREATE INDEX IF NOT EXISTS idx_ads_active ON ads(active);
+        CREATE INDEX IF NOT EXISTS idx_user_ads ON user_ads(user_id, ad_id);
         """)
 
         for tbl, col, typ in [
@@ -293,6 +298,7 @@ def init_db():
             "min_withdraw": str(DEF_MIN_WITHDRAW),
             "referral_bonus": str(DEF_REFERRAL_BONUS),
             "daily_bonus": str(DEF_DAILY_BONUS),
+            "task_wait": str(DEF_TASK_WAIT),
         }
         for k, v in defaults.items():
             conn.execute("INSERT OR IGNORE INTO settings (key,value) VALUES (?,?)", (k, v))
@@ -332,6 +338,7 @@ def user_to_dict(row):
         "min_withdraw": float(get_setting("min_withdraw", "10.00")),
         "referral_bonus": float(get_setting("referral_bonus", "0.50")),
         "daily_bonus": float(get_setting("daily_bonus", "0.10")),
+        "task_wait": int(get_setting("task_wait", "10")),
         "is_admin": row["user_id"] in ADMIN_IDS,
         "bot_username": BOT_USERNAME, "admin_contact": ADMIN_CONTACT,
         "lang": (row["lang"] if "lang" in row.keys() else "ar") or "ar",
@@ -357,7 +364,8 @@ def get_or_create_user(user, referrer_id=None):
                 bonus = float(get_setting("referral_bonus", "0.50"))
                 conn.execute(
                     """UPDATE users SET balance=balance+?, total_earned=total_earned+?,
-                       referrals=referrals+1 WHERE user_id=?""", (bonus, bonus, referrer_id))
+                       referrals=referrals+1 WHERE user_id=?""",
+                    (bonus, bonus, referrer_id))
 
         detected_lang = "ar"
         lc = (user.get("language_code") or "").lower()
@@ -370,7 +378,8 @@ def get_or_create_user(user, referrer_id=None):
                VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
             (uid, user.get("username", ""), user.get("first_name", ""), user.get("last_name", ""),
              user.get("language_code", ""), 1 if user.get("is_premium") else 0,
-             referrer_id, now_ts, datetime.now(timezone.utc).isoformat(), detected_lang, now_ts))
+             referrer_id, now_ts, datetime.now(timezone.utc).isoformat(),
+             detected_lang, now_ts))
         return conn.execute("SELECT * FROM users WHERE user_id=?", (uid,)).fetchone()
 
 
@@ -465,12 +474,12 @@ def require_admin(user_id):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 💓 النبضة (Heartbeat) — كل 10 ثواني
+# 💓 Heartbeat
 # ═══════════════════════════════════════════════════════════════════════
 HEARTBEAT_STATS = {"internal": 0, "external": 0, "started": time.time(), "last": 0}
 
+
 async def internal_heartbeat():
-    """يضرب الخادم المحلي كل 10 ثواني ليبقى event loop نشطًا"""
     await asyncio.sleep(20)
     url = f"http://127.0.0.1:{PORT}/health"
     while True:
@@ -485,7 +494,6 @@ async def internal_heartbeat():
 
 
 async def external_heartbeat():
-    """يضرب رابط Render الخارجي كل 10 ثواني لمنع النوم"""
     await asyncio.sleep(45)
     url = f"{WEBAPP_URL.rstrip('/')}/health"
     while True:
@@ -521,9 +529,7 @@ async def root():
 async def health():
     uptime = int(time.time() - START_TIME)
     return {
-        "ok": True,
-        "bot": BOT_USERNAME,
-        "uptime": uptime,
+        "ok": True, "bot": BOT_USERNAME, "uptime": uptime,
         "uptime_human": str(timedelta(seconds=uptime)),
         "heartbeat": HEARTBEAT_STATS,
         "time": datetime.now(timezone.utc).isoformat(),
@@ -535,8 +541,13 @@ async def api_lang(code: str):
     return LANGS.get(code, LANGS["ar"])
 
 
+@app.get("/api/langs")
+async def api_langs_all():
+    return LANGS
+
+
 # ═══════════════════════════════════════════════════════════════════════
-# 🔑 Auth
+# 🔑 AUTH
 # ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/auth")
 async def api_auth(req: Request):
@@ -559,7 +570,8 @@ async def api_auth(req: Request):
         photo = await fetch_telegram_photo(row["user_id"])
         if photo:
             with db() as conn:
-                conn.execute("UPDATE users SET photo_url=? WHERE user_id=?", (photo, row["user_id"]))
+                conn.execute("UPDATE users SET photo_url=? WHERE user_id=?",
+                             (photo, row["user_id"]))
     reset_ads_if_needed(dict(row))
     fresh = db().execute("SELECT * FROM users WHERE user_id=?", (user["id"],)).fetchone()
     return user_to_dict(fresh)
@@ -595,7 +607,7 @@ async def api_set_lang(req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📢 الإعلانات
+# 📢 الإعلانات — إخفاء دائم للإعلانات المُشاهدة
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/ads")
 async def api_ads(user_id: int):
@@ -604,12 +616,24 @@ async def api_ads(user_id: int):
         if not row:
             raise HTTPException(404, "غير موجود")
         reset_ads_if_needed(dict(row))
+
+        # ═══ إخفاء دائم: أي إعلان شاهده المستخدم لا يظهر مجددًا ═══
         ads = conn.execute(
             """SELECT id, title, description, url, contact, type,
                       video_file_id, image_file_id, media_json,
                       reward, duration, button_text, redirect_url
-               FROM ads WHERE active=1 ORDER BY RANDOM() LIMIT 30""").fetchall()
+               FROM ads
+               WHERE active=1
+                 AND id NOT IN (
+                     SELECT ad_id FROM user_ads
+                     WHERE user_id=?
+                 )
+               ORDER BY RANDOM() LIMIT 30""",
+            (user_id,)).fetchall()
+
         fresh = conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
+        total_active = conn.execute(
+            "SELECT COUNT(*) FROM ads WHERE active=1").fetchone()[0]
 
     out = []
     for a in ads:
@@ -640,6 +664,7 @@ async def api_ads(user_id: int):
         "ads_today": fresh["ads_today"],
         "daily_limit": int(get_setting("daily_limit", "10")),
         "ad_reward": float(get_setting("ad_reward", "0.20")),
+        "total_active": total_active,
         "ads": out,
     }
 
@@ -706,14 +731,16 @@ async def api_watch_ad(ad_id: int, req: Request):
         ad = conn.execute("SELECT * FROM ads WHERE id=? AND active=1", (ad_id,)).fetchone()
         if not ad:
             raise HTTPException(404, "الإعلان غير متاح")
-        recent = conn.execute(
-            """SELECT 1 FROM user_ads WHERE user_id=? AND ad_id=?
-               AND watched_at > datetime('now','-1 hour')""", (user_id, ad_id)).fetchone()
-        if recent:
-            raise HTTPException(429, "شاهدت هذا الإعلان مؤخرًا")
+        # منع تكرار مشاهدة نفس الإعلان نهائيًا
+        already = conn.execute(
+            "SELECT 1 FROM user_ads WHERE user_id=? AND ad_id=?",
+            (user_id, ad_id)).fetchone()
+        if already:
+            raise HTTPException(429, "شاهدت هذا الإعلان مسبقًا")
         reward = ad["reward"] or float(get_setting("ad_reward", "0.20"))
-        conn.execute("INSERT INTO user_ads (user_id, ad_id, watched_at) VALUES (?,?,?)",
-                     (user_id, ad_id, datetime.now(timezone.utc).isoformat()))
+        conn.execute(
+            "INSERT INTO user_ads (user_id, ad_id, watched_at) VALUES (?,?,?)",
+            (user_id, ad_id, datetime.now(timezone.utc).isoformat()))
         conn.execute(
             """UPDATE users SET balance=balance+?, total_earned=total_earned+?,
                ads_watched=ads_watched+1, ads_today=ads_today+1 WHERE user_id=?""",
@@ -733,31 +760,105 @@ async def api_tasks(user_id: int):
         rows = conn.execute("SELECT * FROM tasks WHERE active=1 ORDER BY id DESC").fetchall()
         done = {r["task_id"] for r in conn.execute(
             "SELECT task_id FROM user_tasks WHERE user_id=?", (user_id,)).fetchall()}
-    return [{"id": r["id"], "title": r["title"], "description": r["description"] or "",
-             "reward": r["reward"] or 0, "url": r["url"] or "",
-             "icon": r["icon"] or "🎯", "completed": r["id"] in done} for r in rows]
+        clicks = {r["task_id"]: r["clicked_at"] for r in conn.execute(
+            "SELECT task_id, clicked_at FROM task_clicks WHERE user_id=?",
+            (user_id,)).fetchall()}
+
+    wait_seconds = int(get_setting("task_wait", "10"))
+    now = datetime.now(timezone.utc)
+    out = []
+
+    for r in rows:
+        item = {
+            "id": r["id"], "title": r["title"],
+            "description": r["description"] or "",
+            "reward": r["reward"] or 0,
+            "url": r["url"] or "",
+            "icon": r["icon"] or "🎯",
+            "completed": r["id"] in done,
+            "started": r["id"] in clicks,
+            "can_claim": False,
+            "wait_seconds": wait_seconds,
+            "remaining": 0,
+        }
+        if r["id"] in clicks and not item["completed"]:
+            try:
+                clicked_at = datetime.fromisoformat(clicks[r["id"]])
+                if clicked_at.tzinfo is None:
+                    clicked_at = clicked_at.replace(tzinfo=timezone.utc)
+                diff = (now - clicked_at).total_seconds()
+                item["remaining"] = max(0, int(wait_seconds - diff))
+                item["can_claim"] = diff >= wait_seconds
+            except Exception:
+                pass
+        out.append(item)
+    return out
+
+
+@app.post("/api/tasks/{task_id}/start")
+async def api_task_start(task_id: int, req: Request):
+    body = await req.json()
+    user_id = int(body.get("user_id", 0))
+    with db() as conn:
+        task = conn.execute("SELECT * FROM tasks WHERE id=? AND active=1", (task_id,)).fetchone()
+        if not task:
+            raise HTTPException(404, "المهمة غير موجودة")
+        if conn.execute("SELECT 1 FROM user_tasks WHERE user_id=? AND task_id=?",
+                        (user_id, task_id)).fetchone():
+            raise HTTPException(400, "منجزة مسبقًا")
+        conn.execute(
+            "INSERT OR REPLACE INTO task_clicks (user_id, task_id, clicked_at) VALUES (?,?,?)",
+            (user_id, task_id, datetime.now(timezone.utc).isoformat()))
+    return {"ok": True, "wait_seconds": int(get_setting("task_wait", "10"))}
 
 
 @app.post("/api/tasks/{task_id}/claim")
 async def api_task_claim(task_id: int, req: Request):
     body = await req.json()
     user_id = int(body.get("user_id", 0))
+    wait_seconds = int(get_setting("task_wait", "10"))
+
     with db() as conn:
         task = conn.execute("SELECT * FROM tasks WHERE id=? AND active=1", (task_id,)).fetchone()
         if not task:
-            raise HTTPException(404, "غير موجودة")
+            raise HTTPException(404, "المهمة غير موجودة")
         if conn.execute("SELECT 1 FROM user_tasks WHERE user_id=? AND task_id=?",
                         (user_id, task_id)).fetchone():
-            raise HTTPException(400, "منجزة")
-        conn.execute("INSERT INTO user_tasks (user_id, task_id, completed_at) VALUES (?,?,?)",
-                     (user_id, task_id, datetime.now(timezone.utc).isoformat()))
+            raise HTTPException(400, "منجزة مسبقًا")
+
+        click = conn.execute(
+            "SELECT clicked_at FROM task_clicks WHERE user_id=? AND task_id=?",
+            (user_id, task_id)).fetchone()
+        if not click:
+            raise HTTPException(400, "يجب فتح الرابط أولاً")
+
+        try:
+            clicked_at = datetime.fromisoformat(click["clicked_at"])
+            if clicked_at.tzinfo is None:
+                clicked_at = clicked_at.replace(tzinfo=timezone.utc)
+            diff = (datetime.now(timezone.utc) - clicked_at).total_seconds()
+            if diff < wait_seconds:
+                raise HTTPException(400, f"انتظر {int(wait_seconds - diff)} ثانية")
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(400, "خطأ في التحقق")
+
+        conn.execute(
+            "INSERT INTO user_tasks (user_id, task_id, completed_at) VALUES (?,?,?)",
+            (user_id, task_id, datetime.now(timezone.utc).isoformat()))
         if task["reward"] and task["reward"] > 0:
-            conn.execute("""UPDATE users SET balance=balance+?, total_earned=total_earned+?
-                            WHERE user_id=?""", (task["reward"], task["reward"], user_id))
+            conn.execute(
+                """UPDATE users SET balance=balance+?, total_earned=total_earned+?
+                   WHERE user_id=?""",
+                (task["reward"], task["reward"], user_id))
         row = conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
     return {"reward": task["reward"] or 0, "balance": round(row["balance"], 2)}
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# 🎁 اليومية
+# ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/daily")
 async def api_daily(req: Request):
     body = await req.json()
@@ -773,24 +874,32 @@ async def api_daily(req: Request):
         streak = row["streak"] + 1 if since < 2 * day else 1
         base = float(get_setting("daily_bonus", "0.10"))
         reward = round(base * min(streak, 7), 2)
-        conn.execute("""UPDATE users SET balance=balance+?, total_earned=total_earned+?,
-                        streak=?, last_daily=? WHERE user_id=?""",
-                     (reward, reward, streak, now, user_id))
+        conn.execute(
+            """UPDATE users SET balance=balance+?, total_earned=total_earned+?,
+               streak=?, last_daily=? WHERE user_id=?""",
+            (reward, reward, streak, now, user_id))
         row = conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
     return {"reward": reward, "streak": streak, "balance": round(row["balance"], 2)}
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# 🏆 المتصدرون
+# ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/leaderboard")
 async def api_leaderboard():
     with db() as conn:
-        rows = conn.execute("""SELECT user_id, first_name, username, photo_url, total_earned
-                               FROM users WHERE banned=0
-                               ORDER BY total_earned DESC LIMIT 20""").fetchall()
+        rows = conn.execute(
+            """SELECT user_id, first_name, username, photo_url, total_earned
+               FROM users WHERE banned=0
+               ORDER BY total_earned DESC LIMIT 20""").fetchall()
     return [{"rank": i + 1, "user_id": r["user_id"], "first_name": r["first_name"],
              "username": r["username"], "photo_url": r["photo_url"],
              "total_earned": round(r["total_earned"], 2)} for i, r in enumerate(rows)]
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# 🌍 السحب
+# ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/countries")
 async def api_countries():
     return COUNTRIES
@@ -814,10 +923,13 @@ async def api_setup_withdrawal(req: Request):
         if f.get("required") and not val:
             raise HTTPException(400, f"حقل مطلوب: {f['label']}")
         clean[f["name"]] = val
-    payload = json.dumps({"country": country, "method": method_id, "fields": clean}, ensure_ascii=False)
+    payload = json.dumps({"country": country, "method": method_id, "fields": clean},
+                         ensure_ascii=False)
     with db() as conn:
-        conn.execute("""UPDATE users SET country=?, withdrawal_method=?, withdrawal_data=?
-                        WHERE user_id=?""", (country, method_id, payload, user_id))
+        conn.execute(
+            """UPDATE users SET country=?, withdrawal_method=?, withdrawal_data=?
+               WHERE user_id=?""",
+            (country, method_id, payload, user_id))
     return {"ok": True}
 
 
@@ -840,29 +952,34 @@ async def api_withdraw(req: Request):
         method = get_method(row["country"], row["withdrawal_method"])
         method_name = method["name"] if method else row["withdrawal_method"]
         conn.execute("UPDATE users SET balance=balance-? WHERE user_id=?", (amount, user_id))
-        cur = conn.execute("""INSERT INTO withdrawals (user_id, amount, country, method,
-                              method_name, account_json, created_at)
-                              VALUES (?,?,?,?,?,?,?)""",
-                           (user_id, amount, row["country"], row["withdrawal_method"],
-                            method_name, row["withdrawal_data"],
-                            datetime.now(timezone.utc).isoformat()))
+        cur = conn.execute(
+            """INSERT INTO withdrawals (user_id, amount, country, method,
+               method_name, account_json, created_at)
+               VALUES (?,?,?,?,?,?,?)""",
+            (user_id, amount, row["country"], row["withdrawal_method"],
+             method_name, row["withdrawal_data"],
+             datetime.now(timezone.utc).isoformat()))
         wid = cur.lastrowid
         new_row = conn.execute("SELECT * FROM users WHERE user_id=?", (user_id,)).fetchone()
+
     for admin in ADMIN_IDS:
         try:
             await notify_admin_withdrawal(admin, wid, user_id, amount,
-                                          row["country"], method_name, row["withdrawal_data"])
+                                          row["country"], method_name,
+                                          row["withdrawal_data"])
         except Exception:
             pass
-    return {"ok": True, "balance": round(new_row["balance"], 2), "amount": amount, "id": wid}
+    return {"ok": True, "balance": round(new_row["balance"], 2),
+            "amount": amount, "id": wid}
 
 
 @app.get("/api/withdrawals")
 async def api_withdrawals(user_id: int):
     with db() as conn:
-        rows = conn.execute("""SELECT id, amount, method_name, status, created_at
-                               FROM withdrawals WHERE user_id=?
-                               ORDER BY id DESC LIMIT 30""", (user_id,)).fetchall()
+        rows = conn.execute(
+            """SELECT id, amount, method_name, status, created_at
+               FROM withdrawals WHERE user_id=?
+               ORDER BY id DESC LIMIT 30""", (user_id,)).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -874,13 +991,14 @@ async def api_contact_request(req: Request):
     if not message:
         raise HTTPException(400, "الرسالة مطلوبة")
     if not rate_ok(user_id, max_hits=3, window=60):
-        raise HTTPException(429, "تريد الإرسال كثيرًا، انتظر قليلًا")
+        raise HTTPException(429, "أرسلت كثيرًا، انتظر قليلًا")
     with db() as conn:
         row = conn.execute("SELECT username FROM users WHERE user_id=?", (user_id,)).fetchone()
         username = row["username"] if row else ""
-        conn.execute("""INSERT INTO contact_requests (user_id, username, message, created_at)
-                        VALUES (?,?,?,?)""",
-                     (user_id, username, message, datetime.now(timezone.utc).isoformat()))
+        conn.execute(
+            """INSERT INTO contact_requests (user_id, username, message, created_at)
+               VALUES (?,?,?,?)""",
+            (user_id, username, message, datetime.now(timezone.utc).isoformat()))
     for admin in ADMIN_IDS:
         try:
             await notify_admin_contact(admin, user_id, username, message)
@@ -889,7 +1007,11 @@ async def api_contact_request(req: Request):
     return {"ok": True}
 
 
-async def notify_admin_withdrawal(admin, wid, user_id, amount, country, method_name, account_json):
+# ═══════════════════════════════════════════════════════════════════════
+# 🔔 إشعارات
+# ═══════════════════════════════════════════════════════════════════════
+async def notify_admin_withdrawal(admin, wid, user_id, amount, country,
+                                  method_name, account_json):
     if not BOT_TOKEN:
         return
     try:
@@ -897,21 +1019,23 @@ async def notify_admin_withdrawal(admin, wid, user_id, amount, country, method_n
     except Exception:
         f = {}
     fields_txt = "\n".join(f"  • {k}: `{v}`" for k, v in f.items())
-    text = (f"💸 *طلب سحب جديد*\n▬▬▬▬▬▬▬▬▬▬\n🆔 `#{wid}`\n👤 `{user_id}`\n💵 `${amount:.2f}`\n"
-            f"🌍 {COUNTRIES.get(country, {}).get('name', country)}\n💳 {method_name}\n"
-            f"📄 البيانات:\n{fields_txt}")
+    text = (f"💸 *طلب سحب جديد*\n▬▬▬▬▬▬▬▬▬▬\n🆔 `#{wid}`\n👤 `{user_id}`\n"
+            f"💵 `${amount:.2f}`\n🌍 {COUNTRIES.get(country, {}).get('name', country)}\n"
+            f"💳 {method_name}\n📄 البيانات:\n{fields_txt}")
     kb = {"inline_keyboard": [[
         {"text": "✅ موافقة", "callback_data": f"wd_ok_{wid}"},
         {"text": "❌ رفض", "callback_data": f"wd_no_{wid}"}]]}
     async with httpx.AsyncClient() as c:
         await c.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-                     json={"chat_id": admin, "text": text, "parse_mode": "Markdown", "reply_markup": kb})
+                     json={"chat_id": admin, "text": text, "parse_mode": "Markdown",
+                           "reply_markup": kb})
 
 
 async def notify_admin_contact(admin, user_id, username, message):
     if not BOT_TOKEN:
         return
-    text = (f"📞 *طلب تواصل جديد*\n▬▬▬▬▬▬▬▬▬▬\n👤 `{user_id}`\n🔗 @{username or '—'}\n\n💬 {message}")
+    text = (f"📞 *طلب تواصل جديد*\n▬▬▬▬▬▬▬▬▬▬\n👤 `{user_id}`\n"
+            f"🔗 @{username or '—'}\n\n💬 {message}")
     async with httpx.AsyncClient() as c:
         await c.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
                      json={"chat_id": admin, "text": text, "parse_mode": "Markdown"})
@@ -965,7 +1089,8 @@ async def adm_upload_media(file: UploadFile = File(...), user_id: int = Form(...
         try:
             async with httpx.AsyncClient(timeout=10) as c2:
                 await c2.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",
-                              json={"chat_id": upload_target, "message_id": result["message_id"]})
+                              json={"chat_id": upload_target,
+                                    "message_id": result["message_id"]})
         except Exception:
             pass
 
@@ -1064,7 +1189,9 @@ async def adm_toggle_ad(ad_id: int, req: Request):
 async def adm_tasks_list(user_id: int):
     require_admin(user_id)
     with db() as conn:
-        rows = conn.execute("SELECT id, title, description, reward, url, icon, active FROM tasks ORDER BY id DESC").fetchall()
+        rows = conn.execute(
+            "SELECT id, title, description, reward, url, icon, active FROM tasks ORDER BY id DESC"
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -1079,7 +1206,8 @@ async def adm_add_task(req: Request):
         cur = conn.execute(
             "INSERT INTO tasks (title, description, reward, url, icon, created_at) VALUES (?,?,?,?,?,?)",
             (title, body.get("description", ""), float(body.get("reward", 0)),
-             body.get("url", ""), body.get("icon", "🎯"), datetime.now(timezone.utc).isoformat()))
+             body.get("url", ""), body.get("icon", "🎯"),
+             datetime.now(timezone.utc).isoformat()))
     return {"ok": True, "id": cur.lastrowid}
 
 
@@ -1125,9 +1253,9 @@ async def adm_wd_approve(wid: int, req: Request):
     try:
         async with httpx.AsyncClient() as c:
             await c.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-                         json={"chat_id": row["user_id"],
-                               "text": f"✅ تمت الموافقة على سحبك `${row['amount']:.2f}`",
-                               "parse_mode": "Markdown"})
+                json={"chat_id": row["user_id"],
+                      "text": f"✅ تمت الموافقة على سحبك `${row['amount']:.2f}`",
+                      "parse_mode": "Markdown"})
     except Exception: pass
     return {"ok": True}
 
@@ -1148,9 +1276,9 @@ async def adm_wd_reject(wid: int, req: Request):
     try:
         async with httpx.AsyncClient() as c:
             await c.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-                         json={"chat_id": row["user_id"],
-                               "text": f"❌ رُفض سحبك وأُرجع `${row['amount']:.2f}` لرصيدك",
-                               "parse_mode": "Markdown"})
+                json={"chat_id": row["user_id"],
+                      "text": f"❌ رُفض سحبك وأُرجع `${row['amount']:.2f}` لرصيدك",
+                      "parse_mode": "Markdown"})
     except Exception: pass
     return {"ok": True}
 
@@ -1159,7 +1287,9 @@ async def adm_wd_reject(wid: int, req: Request):
 async def adm_contacts(user_id: int):
     require_admin(user_id)
     with db() as conn:
-        rows = conn.execute("SELECT * FROM contact_requests WHERE status='new' ORDER BY id DESC LIMIT 100").fetchall()
+        rows = conn.execute(
+            "SELECT * FROM contact_requests WHERE status='new' ORDER BY id DESC LIMIT 100"
+        ).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -1175,17 +1305,22 @@ async def adm_contact_done(cid: int, req: Request):
 @app.get("/api/admin/settings")
 async def adm_settings_get(user_id: int):
     require_admin(user_id)
-    return {"ad_reward": get_setting("ad_reward"), "daily_limit": get_setting("daily_limit"),
-            "min_withdraw": get_setting("min_withdraw"),
-            "referral_bonus": get_setting("referral_bonus"),
-            "daily_bonus": get_setting("daily_bonus")}
+    return {
+        "ad_reward": get_setting("ad_reward"),
+        "daily_limit": get_setting("daily_limit"),
+        "min_withdraw": get_setting("min_withdraw"),
+        "referral_bonus": get_setting("referral_bonus"),
+        "daily_bonus": get_setting("daily_bonus"),
+        "task_wait": get_setting("task_wait"),
+    }
 
 
 @app.post("/api/admin/settings")
 async def adm_settings_set(req: Request):
     body = await req.json()
     require_admin(int(body.get("user_id", 0)))
-    for k in ["ad_reward", "daily_limit", "min_withdraw", "referral_bonus", "daily_bonus"]:
+    for k in ["ad_reward", "daily_limit", "min_withdraw", "referral_bonus",
+              "daily_bonus", "task_wait"]:
         if k in body:
             set_setting(k, body[k])
     return {"ok": True}
@@ -1216,7 +1351,8 @@ async def adm_user_ban(uid: int, req: Request):
         r = conn.execute("SELECT banned FROM users WHERE user_id=?", (uid,)).fetchone()
         if not r:
             raise HTTPException(404, "غير موجود")
-        conn.execute("UPDATE users SET banned=? WHERE user_id=?", (0 if r["banned"] else 1, uid))
+        conn.execute("UPDATE users SET banned=? WHERE user_id=?",
+                     (0 if r["banned"] else 1, uid))
     return {"ok": True}
 
 
@@ -1234,7 +1370,8 @@ async def adm_broadcast(req: Request):
         for u in users:
             try:
                 r = await c.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-                                 json={"chat_id": u["user_id"], "text": text, "parse_mode": "Markdown"})
+                                 json={"chat_id": u["user_id"], "text": text,
+                                       "parse_mode": "Markdown"})
                 if r.json().get("ok"):
                     sent += 1
                 await asyncio.sleep(0.05)
@@ -1243,7 +1380,7 @@ async def adm_broadcast(req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🤖 /start — يعمل للجميع
+# 🤖 /start
 # ═══════════════════════════════════════════════════════════════════════
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     u = update.effective_user
@@ -1317,15 +1454,14 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• 💸 {L['min_withdraw']}: `${min_w}`\n"
     )
 
-    # ═════════════════════════════════════════════════════════
-    # الأزرار للجميع — بلا استثناء
-    # ═════════════════════════════════════════════════════════
     kb = [
-        [InlineKeyboardButton(f"🚀 {L['open_app']}", web_app=WebAppInfo(url=WEBAPP_URL))],
+        [InlineKeyboardButton(f"🚀 {L['open_app']}",
+                              web_app=WebAppInfo(url=WEBAPP_URL))],
         [InlineKeyboardButton(f"🤝 {L['my_ref']}", callback_data="get_ref"),
          InlineKeyboardButton(f"💰 {L['my_balance']}", callback_data="my_balance")],
         [InlineKeyboardButton(f"📞 {L['contact']}", url=f"https://t.me/{ADMIN_CONTACT}"),
          InlineKeyboardButton(f"📊 {L['leaderboard']}", callback_data="show_lb")],
+        [InlineKeyboardButton(f"🌐 {L['select_lang']}", callback_data="set_lang")],
     ]
     if is_owner:
         kb.append([InlineKeyboardButton(f"👑 {L['admin_panel']}",
@@ -1388,11 +1524,68 @@ async def cmd_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id):
         return
     up = int(time.time() - START_TIME)
+    with db() as conn:
+        users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        ads = conn.execute("SELECT COUNT(*) FROM ads WHERE active=1").fetchone()[0]
+        tasks = conn.execute("SELECT COUNT(*) FROM tasks WHERE active=1").fetchone()[0]
     await update.message.reply_text(
-        f"📊 *Uptime:* `{timedelta(seconds=up)}`\n"
-        f"💓 *Internal pings:* `{HEARTBEAT_STATS['internal']}`\n"
-        f"🌐 *External pings:* `{HEARTBEAT_STATS['external']}`",
+        f"📊 *Stats*\n▬▬▬▬▬▬▬▬▬▬\n"
+        f"👥 Users: `{users}`\n"
+        f"📢 Ads: `{ads}`\n"
+        f"📋 Tasks: `{tasks}`\n"
+        f"⏱ Uptime: `{timedelta(seconds=up)}`\n"
+        f"💓 Pings: `{HEARTBEAT_STATS['internal']}`",
         parse_mode="Markdown")
+
+
+async def cmd_lang(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    uid = update.effective_user.id
+    args = context.args
+    with db() as conn:
+        row = conn.execute("SELECT lang FROM users WHERE user_id=?", (uid,)).fetchone()
+    current = (row["lang"] if row else "ar") or "ar"
+
+    if args and args[0] in LANGS:
+        new_lang = args[0]
+        with db() as conn:
+            conn.execute("UPDATE users SET lang=? WHERE user_id=?", (new_lang, uid))
+        await update.message.reply_text(
+            f"✅ Language set to: *{LANGS[new_lang]['name']}*",
+            parse_mode="Markdown")
+        return
+
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🇸🇦 العربية", callback_data="lang_ar"),
+         InlineKeyboardButton("🇬🇧 English", callback_data="lang_en")],
+    ])
+    await update.message.reply_text("🌐 اختر اللغة / Choose language",
+                                    reply_markup=kb)
+
+
+async def callback_set_lang(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🇸🇦 العربية", callback_data="lang_ar"),
+         InlineKeyboardButton("🇬🇧 English", callback_data="lang_en")],
+    ])
+    await q.message.reply_text("🌐 اختر اللغة / Choose language", reply_markup=kb)
+
+
+async def callback_lang_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
+    lang_code = q.data.replace("lang_", "")
+    if lang_code not in LANGS:
+        return
+    with db() as conn:
+        conn.execute("UPDATE users SET lang=? WHERE user_id=?", (lang_code, q.from_user.id))
+    name = LANGS[lang_code]["name"]
+    await q.edit_message_text(f"✅ {name}")
+    try:
+        await cmd_start(update, context)
+    except Exception:
+        pass
 
 
 async def callback_get_ref(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1410,15 +1603,19 @@ async def callback_my_balance(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not row:
         await q.answer("افتح التطبيق", show_alert=True)
         return
-    await q.answer(f"💰 ${row['balance']:.2f}\n📊 ${row['total_earned']:.2f}", show_alert=True)
+    rank, total = user_rank(q.from_user.id)
+    await q.answer(
+        f"💰 ${row['balance']:.2f}\n📊 ${row['total_earned']:.2f}\n🏆 {rank}/{total}",
+        show_alert=True)
 
 
 async def callback_show_lb(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
     with db() as conn:
-        rows = conn.execute("""SELECT first_name, total_earned FROM users
-                               WHERE banned=0 ORDER BY total_earned DESC LIMIT 10""").fetchall()
+        rows = conn.execute(
+            """SELECT first_name, total_earned FROM users
+               WHERE banned=0 ORDER BY total_earned DESC LIMIT 10""").fetchall()
     if not rows:
         await q.message.reply_text("—")
         return
@@ -1441,14 +1638,18 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         wid = int(d.split("_")[-1])
         with db() as conn:
             row = conn.execute("SELECT * FROM withdrawals WHERE id=?", (wid,)).fetchone()
-            conn.execute("UPDATE withdrawals SET status='approved', processed_at=? WHERE id=?",
-                         (datetime.now(timezone.utc).isoformat(), wid))
+            conn.execute(
+                "UPDATE withdrawals SET status='approved', processed_at=? WHERE id=?",
+                (datetime.now(timezone.utc).isoformat(), wid))
         if row:
             try:
-                await context.bot.send_message(chat_id=row["user_id"],
-                    text=f"✅ `${row['amount']:.2f}` approved", parse_mode="Markdown")
+                await context.bot.send_message(
+                    chat_id=row["user_id"],
+                    text=f"✅ `${row['amount']:.2f}` approved",
+                    parse_mode="Markdown")
             except Exception: pass
-        await q.answer("✅", show_alert=True); return
+        await q.answer("✅", show_alert=True)
+        return
     if d.startswith("wd_no_"):
         wid = int(d.split("_")[-1])
         with db() as conn:
@@ -1456,14 +1657,18 @@ async def admin_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if row and row["status"] == "pending":
                 conn.execute("UPDATE users SET balance=balance+? WHERE user_id=?",
                              (row["amount"], row["user_id"]))
-                conn.execute("UPDATE withdrawals SET status='rejected', processed_at=? WHERE id=?",
-                             (datetime.now(timezone.utc).isoformat(), wid))
+                conn.execute(
+                    "UPDATE withdrawals SET status='rejected', processed_at=? WHERE id=?",
+                    (datetime.now(timezone.utc).isoformat(), wid))
         if row:
             try:
-                await context.bot.send_message(chat_id=row["user_id"],
-                    text=f"❌ `${row['amount']:.2f}` rejected", parse_mode="Markdown")
+                await context.bot.send_message(
+                    chat_id=row["user_id"],
+                    text=f"❌ `${row['amount']:.2f}` rejected",
+                    parse_mode="Markdown")
             except Exception: pass
-        await q.answer("❌", show_alert=True); return
+        await q.answer("❌", show_alert=True)
+        return
 
 
 async def set_bot_commands(app_bot):
@@ -1472,11 +1677,13 @@ async def set_bot_commands(app_bot):
             BotCommand("start", "🏠 Start / ابدأ"),
             BotCommand("balance", "💰 Balance / رصيدي"),
             BotCommand("ref", "🤝 Referral / الإحالة"),
+            BotCommand("lang", "🌐 Language / اللغة"),
         ])
         try:
             await app_bot.bot.set_chat_menu_button(
-                menu_button=MenuButtonWebApp(text="💎 Open App",
-                                              web_app=WebAppInfo(url=WEBAPP_URL)))
+                menu_button=MenuButtonWebApp(
+                    text="💎 App",
+                    web_app=WebAppInfo(url=WEBAPP_URL)))
         except Exception:
             pass
     except Exception as e:
@@ -1497,6 +1704,9 @@ async def run_bot():
     app_bot.add_handler(CommandHandler("balance", cmd_balance))
     app_bot.add_handler(CommandHandler("ref", cmd_ref))
     app_bot.add_handler(CommandHandler("stats", cmd_stats))
+    app_bot.add_handler(CommandHandler("lang", cmd_lang))
+    app_bot.add_handler(CallbackQueryHandler(callback_set_lang, pattern=r"^set_lang$"))
+    app_bot.add_handler(CallbackQueryHandler(callback_lang_choice, pattern=r"^lang_"))
     app_bot.add_handler(CallbackQueryHandler(callback_get_ref, pattern=r"^get_ref$"))
     app_bot.add_handler(CallbackQueryHandler(callback_my_balance, pattern=r"^my_balance$"))
     app_bot.add_handler(CallbackQueryHandler(callback_show_lb, pattern=r"^show_lb$"))
@@ -1504,7 +1714,6 @@ async def run_bot():
 
     await app_bot.initialize()
 
-    # ✅ حذف أي webhook أو تحديثات معلّقة قبل بدء polling
     try:
         await app_bot.bot.delete_webhook(drop_pending_updates=True)
         print("✅ Webhook cleared")
@@ -1514,7 +1723,6 @@ async def run_bot():
     await set_bot_commands(app_bot)
     await app_bot.start()
 
-    # ✅ حلقة polling مع إعادة محاولة عند Conflict
     while True:
         try:
             await app_bot.updater.start_polling(
@@ -1526,7 +1734,7 @@ async def run_bot():
             print("✅ Polling started")
             break
         except Conflict:
-            print("⚠️ Conflict — instance أخرى تعمل، أعيد المحاولة بعد 5s")
+            print("⚠️ Conflict — إعادة المحاولة بعد 5s")
             await asyncio.sleep(5)
         except Exception as e:
             print(f"⚠️ polling: {e}")
@@ -1550,8 +1758,9 @@ async def main():
     print(f"👑 {ADMIN_IDS}")
     print(f"🤖 @{BOT_USERNAME}")
     print(f"💓 Heartbeat: {PING_INTERVAL}s")
+    print(f"⏱ Task wait: {DEF_TASK_WAIT}s")
+    print(f"🚫 Ads are hidden PERMANENTLY after watching")
 
-    # تشغيل الويب + البوت + النبضات في نفس time loop
     await asyncio.gather(
         run_web(),
         run_bot(),
