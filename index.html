@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<meta name="theme-color" content="#05050f" />
+<meta name="theme-color" content="#000000" />
 <title>💎 AdVault Pro VIP</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -120,21 +120,36 @@
   .section-title{font-size:15px;font-weight:800;margin:22px 0 12px;display:flex;align-items:center;gap:8px;}
   .section-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border-2),transparent);margin-inline-start:8px;}
 
-  /* Ad Hero */
-  .ad-hero{padding:0;margin-bottom:18px;border-radius:26px;overflow:hidden;
+  /* Ad Hero Card */
+  .ad-hero{padding:0;margin-bottom:18px;border-radius:24px;overflow:hidden;
     background:linear-gradient(160deg,rgba(168,85,247,0.15),rgba(59,130,246,0.08));
-    border:1px solid rgba(168,85,247,0.3);position:relative;animation:fadeSlide 0.35s ease;}
-  .ad-hero-media{width:100%;height:220px;background:#000;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
-  .ad-hero-media img,.ad-hero-media video{width:100%;height:100%;object-fit:cover;}
-  .ad-hero-media .placeholder{font-size:60px;}
-  .ad-hero-body{padding:18px;text-align:center;}
-  .ad-hero-title{font-size:20px;font-weight:900;margin-bottom:6px;}
-  .ad-hero-desc{font-size:13px;color:var(--text-dim);margin-bottom:14px;line-height:1.6;}
-  .ad-hero-reward{display:inline-block;padding:8px 20px;background:linear-gradient(135deg,var(--gold),var(--gold-2));
-    color:#000;font-weight:900;font-size:16px;border-radius:14px;box-shadow:0 4px 20px rgba(255,215,0,0.5);margin-bottom:14px;}
-  .ad-hero-redirect{display:inline-block;padding:10px 18px;background:rgba(59,130,246,0.15);
-    border:1px solid rgba(59,130,246,0.4);color:var(--blue);border-radius:12px;font-size:13px;font-weight:700;
-    margin-bottom:14px;cursor:pointer;text-decoration:none;}
+    border:1px solid rgba(168,85,247,0.3);
+    position:relative;animation:fadeSlide 0.35s ease;
+    box-shadow:0 12px 40px rgba(0,0,0,0.4);}
+  .ad-hero-media{width:100%;height:260px;background:#000;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:hidden;}
+  .ad-hero-media img,
+  .ad-hero-media video{width:100%;height:100%;object-fit:cover;}
+  .ad-hero-media::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,0.85) 100%);
+    pointer-events:none;}
+  .ad-hero-media .placeholder{font-size:70px;}
+  .ad-hero-badge{position:absolute;top:12px;right:12px;
+    padding:6px 12px;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);
+    border-radius:12px;font-size:11px;font-weight:800;color:var(--gold);
+    border:1px solid rgba(255,215,0,0.3);display:flex;align-items:center;gap:4px;z-index:3;}
+  .ad-hero-body{padding:20px;text-align:center;}
+  .ad-hero-title{font-size:22px;font-weight:900;margin-bottom:8px;line-height:1.3;}
+  .ad-hero-desc{font-size:13px;color:var(--text-dim);margin-bottom:16px;line-height:1.6;}
+  .ad-hero-reward{display:inline-block;padding:10px 24px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-2));
+    color:#000;font-weight:900;font-size:18px;border-radius:16px;
+    box-shadow:0 6px 28px rgba(255,215,0,0.5);margin-bottom:16px;}
+  .ad-hero-redirect{display:inline-block;padding:12px 20px;
+    background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);
+    color:var(--blue);border-radius:14px;font-size:13px;font-weight:700;
+    margin-bottom:16px;cursor:pointer;text-decoration:none;}
   .ad-hero-redirect:active{transform:scale(0.96);}
 
   /* Ad Row */
@@ -151,24 +166,119 @@
     background:rgba(0,230,118,0.15);color:var(--green);
     border:1px solid rgba(0,230,118,0.35);white-space:nowrap;cursor:pointer;}
 
-  /* Overlay */
-  .ad-overlay{position:fixed;inset:0;z-index:9998;background:rgba(5,5,15,0.98);backdrop-filter:blur(20px);
-    display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
-  .ad-overlay.active{display:flex;}
-  .overlay-media{max-width:100%;max-height:50vh;border-radius:20px;margin-bottom:16px;box-shadow:0 12px 40px rgba(0,0,0,0.6);object-fit:contain;}
-  .overlay-carousel{display:flex;gap:10px;overflow-x:auto;max-width:100%;padding:10px 0;margin-bottom:10px;scroll-snap-type:x mandatory;}
-  .overlay-carousel::-webkit-scrollbar{display:none;}
-  .overlay-carousel img,.overlay-carousel video{width:90px;height:90px;border-radius:14px;object-fit:cover;flex-shrink:0;border:1px solid var(--border);scroll-snap-align:start;}
-  .ad-timer-circle{position:relative;width:140px;height:140px;margin-bottom:20px;}
-  .ad-timer-circle svg{transform:rotate(-90deg);}
-  .ad-timer-circle circle{fill:none;stroke-width:8;}
-  .ad-timer-bg{stroke:rgba(255,255,255,0.08);}
-  .ad-timer-fg{stroke:var(--gold);stroke-linecap:round;transition:stroke-dashoffset 1s linear;filter:drop-shadow(0 0 8px var(--gold));}
-  .ad-timer-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900;
-    background:linear-gradient(180deg,#fff5b8,var(--gold-3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-  .ad-overlay-title{font-size:20px;font-weight:800;margin-bottom:8px;text-align:center;}
-  .ad-overlay-desc{font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:24px;max-width:320px;}
-  .ad-overlay-btn{max-width:320px;width:100%;}
+  /* ═══════ AD OVERLAY — FULLSCREEN ═══════ */
+  .ad-overlay{position:fixed;inset:0;z-index:9998;background:#000;
+    display:none;flex-direction:column;padding:0;overflow:hidden;}
+  .ad-overlay.active{display:flex;animation:fadeIn 0.3s ease;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+  .ad-topbar{position:absolute;top:0;left:0;right:0;z-index:10;
+    display:flex;align-items:center;gap:10px;padding:16px 16px 24px;
+    background:linear-gradient(180deg,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.7) 60%,transparent 100%);}
+  .ad-close-btn{width:34px;height:34px;border-radius:50%;
+    background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.25);
+    color:#fff;font-size:14px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex-shrink:0;transition:all 0.2s;}
+  .ad-close-btn:active{transform:scale(0.9);background:rgba(255,255,255,0.25);}
+
+  .ad-timer-mini{position:relative;width:38px;height:38px;flex-shrink:0;}
+  .ad-timer-mini svg{transform:rotate(-90deg);width:38px;height:38px;display:block;}
+  .ad-timer-bg-mini{fill:rgba(0,0,0,0.6);stroke:rgba(255,255,255,0.2);stroke-width:3;}
+  .ad-timer-fg-mini{fill:none;stroke:var(--gold);stroke-width:3;stroke-linecap:round;
+    transition:stroke-dashoffset 1s linear;filter:drop-shadow(0 0 6px var(--gold));}
+  .ad-timer-text-mini{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:900;color:var(--gold);text-shadow:0 0 10px rgba(255,215,0,0.6);}
+
+  .ad-progress-track{flex:1;height:5px;background:rgba(255,255,255,0.15);
+    border-radius:3px;overflow:hidden;position:relative;}
+  .ad-progress-fill{height:100%;width:0%;
+    background:linear-gradient(90deg,var(--gold),var(--gold-2));
+    border-radius:3px;transition:width 1s linear;
+    box-shadow:0 0 10px var(--gold);}
+
+  .ad-media-counter{font-size:11px;font-weight:800;color:#fff;
+    background:rgba(255,255,255,0.18);backdrop-filter:blur(12px);
+    padding:6px 10px;border-radius:10px;flex-shrink:0;
+    border:1px solid rgba(255,255,255,0.15);font-family:"SF Mono",monospace;}
+
+  .ad-stage{flex:1;position:relative;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;background:#000;}
+  .ad-media-wrap{width:100%;height:100%;
+    display:flex;align-items:center;justify-content:center;position:relative;}
+  .ad-media-wrap img,
+  .ad-media-wrap video{max-width:100%;max-height:100%;width:auto;height:auto;
+    object-fit:contain;display:block;}
+  .ad-media-wrap .placeholder-media{font-size:120px;opacity:0.4;animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+
+  .ad-dots{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+    display:flex;gap:6px;z-index:5;padding:8px 12px;
+    background:rgba(0,0,0,0.5);backdrop-filter:blur(10px);
+    border-radius:20px;border:1px solid rgba(255,255,255,0.1);}
+  .ad-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);
+    transition:all 0.3s ease;}
+  .ad-dot.active{background:var(--gold);width:22px;border-radius:4px;
+    box-shadow:0 0 12px var(--gold);}
+  .ad-dot.done{background:rgba(255,215,0,0.6);}
+
+  /* Sound Toggle Button */
+  .ad-sound-btn{position:absolute;bottom:20px;right:20px;z-index:15;
+    width:48px;height:48px;border-radius:50%;
+    background:rgba(0,0,0,0.7);backdrop-filter:blur(20px);
+    border:1.5px solid rgba(255,215,0,0.5);
+    color:var(--gold);font-size:20px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:all 0.25s ease;
+    box-shadow:0 8px 24px rgba(0,0,0,0.6);}
+  .ad-sound-btn:active{transform:scale(0.9);}
+  .ad-sound-btn.on{background:linear-gradient(135deg,var(--gold),var(--gold-2));
+    color:#000;border-color:var(--gold);
+    box-shadow:0 8px 32px rgba(255,215,0,0.7);
+    animation:soundPulse 1.5s ease-in-out infinite;}
+  @keyframes soundPulse{
+    0%,100%{transform:scale(1);box-shadow:0 8px 32px rgba(255,215,0,0.7);}
+    50%{transform:scale(1.06);box-shadow:0 12px 40px rgba(255,215,0,0.95);}
+  }
+  .ad-sound-hint{position:absolute;bottom:80px;right:20px;z-index:15;
+    padding:8px 14px;border-radius:12px;
+    background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);
+    color:var(--gold);font-size:11px;font-weight:800;
+    border:1px solid rgba(255,215,0,0.4);
+    animation:hintFloat 1.5s ease-in-out infinite;
+    pointer-events:none;white-space:nowrap;}
+  @keyframes hintFloat{
+    0%,100%{transform:translateY(0);opacity:0.9;}
+    50%{transform:translateY(-6px);opacity:1;}
+  }
+  .ad-sound-hint.hidden{display:none;}
+
+  .ad-bottombar{padding:20px 18px 28px;
+    background:linear-gradient(0deg,rgba(0,0,0,1) 0%,rgba(0,0,0,0.9) 70%,transparent 100%);
+    display:flex;flex-direction:column;gap:14px;position:relative;z-index:10;}
+  .ad-info-block{display:flex;flex-direction:column;gap:6px;}
+  .ad-info-title{font-size:17px;font-weight:900;color:#fff;line-height:1.3;}
+  .ad-info-desc{font-size:13px;color:rgba(255,255,255,0.65);line-height:1.5;}
+  .ad-reward-badge{align-self:flex-start;padding:7px 16px;border-radius:12px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-2));
+    color:#000;font-weight:900;font-size:14px;
+    box-shadow:0 4px 24px rgba(255,215,0,0.5);
+    display:inline-flex;align-items:center;gap:6px;}
+  .ad-claim-btn{width:100%;padding:18px;border-radius:18px;border:none;
+    background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);
+    font-weight:900;font-size:15px;font-family:inherit;cursor:not-allowed;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    transition:all 0.25s ease;letter-spacing:0.3px;}
+  .ad-claim-btn:not(:disabled){background:linear-gradient(135deg,var(--gold),var(--gold-2));
+    color:#000;cursor:pointer;box-shadow:0 8px 32px rgba(255,215,0,0.5);
+    animation:claimPulse 1.6s ease-in-out infinite;}
+  .ad-claim-btn:not(:disabled):active{transform:scale(0.97);}
+  @keyframes claimPulse{
+    0%,100%{transform:scale(1);box-shadow:0 8px 32px rgba(255,215,0,0.5);}
+    50%{transform:scale(1.02);box-shadow:0 12px 48px rgba(255,215,0,0.75);}
+  }
+  .ad-claim-btn .btn-icon{font-size:18px;}
 
   /* Tasks */
   .task{display:flex;align-items:center;gap:14px;padding:14px;
@@ -349,6 +459,8 @@
   .media-thumb .remove{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;
     background:rgba(255,82,82,0.9);color:#fff;display:flex;align-items:center;justify-content:center;
     font-size:12px;font-weight:900;cursor:pointer;border:none;}
+  .media-thumb .order-tag{position:absolute;bottom:4px;left:4px;padding:2px 8px;border-radius:8px;
+    background:rgba(0,0,0,0.75);color:var(--gold);font-size:10px;font-weight:900;}
   .media-add{aspect-ratio:1;border-radius:12px;border:2px dashed var(--border-2);
     display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;
     cursor:pointer;color:var(--gold);font-size:11px;font-weight:700;background:rgba(255,215,0,0.04);}
@@ -377,7 +489,7 @@
   .toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(140px);
     background:linear-gradient(135deg,rgba(255,215,0,0.98),rgba(255,170,0,0.98));
     color:#000;padding:14px 26px;border-radius:16px;font-weight:800;font-size:14px;
-    z-index:1000;opacity:0;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);
+    z-index:10000;opacity:0;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);
     box-shadow:0 16px 50px rgba(255,215,0,0.5);max-width:90vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.error{background:linear-gradient(135deg,#ff5252,#d32f2f);color:#fff;}
@@ -425,7 +537,6 @@
 <div class="hb" id="hbIndicator"><div class="hb-dot"></div><span id="hbText">LIVE</span></div>
 
 <div id="app">
-  <!-- HEADER -->
   <div class="header">
     <img class="avatar" id="headerAvatar" alt="" style="display:none" />
     <div class="avatar" id="headerAvatarFallback">U</div>
@@ -440,7 +551,6 @@
     <button class="lang-btn" id="langBtn" onclick="toggleLang()">🌐 AR</button>
   </div>
 
-  <!-- HOME -->
   <div class="tab active" id="tab-home">
     <div class="wallet-card">
       <div class="wallet-top">
@@ -471,7 +581,6 @@
     <div id="adsList"></div>
   </div>
 
-  <!-- TASKS -->
   <div class="tab" id="tab-tasks">
     <div class="daily-card" id="dailyCard">
       <div class="daily-icon">🎁</div>
@@ -485,13 +594,11 @@
     <div id="tasksList"></div>
   </div>
 
-  <!-- LEADERBOARD -->
   <div class="tab" id="tab-leaderboard">
     <div class="section-title"><span id="lblLb">🏆 Top Earners</span></div>
     <div id="leaderboardList"></div>
   </div>
 
-  <!-- WALLET -->
   <div class="tab" id="tab-wallet">
     <div class="wallet-card">
       <div class="wallet-top">
@@ -526,7 +633,6 @@
     <div id="withdrawalsList"></div>
   </div>
 
-  <!-- PROFILE -->
   <div class="tab" id="tab-profile">
     <div class="profile-hero">
       <img class="profile-avatar" id="profileAvatar" style="display:none" alt="" />
@@ -558,7 +664,6 @@
     <button class="btn btn-purple" onclick="switchTab('contact')">💬 Contact Us</button>
   </div>
 
-  <!-- CONTACT -->
   <div class="tab" id="tab-contact">
     <div class="contact-hero">
       <div class="contact-hero-icon">📞</div>
@@ -571,7 +676,6 @@
     <button class="btn btn-purple" onclick="openAdminChat()">💬 Open Admin Chat</button>
   </div>
 
-  <!-- ADMIN -->
   <div class="tab" id="tab-admin">
     <div class="admin-header">
       <div class="admin-crown-icon">👑</div>
@@ -594,20 +698,41 @@
 
 <!-- AD WATCH OVERLAY -->
 <div class="ad-overlay" id="adOverlay">
-  <div id="overlayMedia"></div>
-  <div class="ad-timer-circle" id="timerWrap">
-    <svg width="140" height="140">
-      <circle class="ad-timer-bg" cx="70" cy="70" r="60"></circle>
-      <circle class="ad-timer-fg" id="timerCircle" cx="70" cy="70" r="60" stroke-dasharray="376.99" stroke-dashoffset="0"></circle>
-    </svg>
-    <div class="ad-timer-text" id="timerText">15</div>
+  <div class="ad-topbar">
+    <button class="ad-close-btn" onclick="closeAdOverlay()">✕</button>
+    <div class="ad-timer-mini">
+      <svg viewBox="0 0 38 38">
+        <circle class="ad-timer-bg-mini" cx="19" cy="19" r="16"></circle>
+        <circle class="ad-timer-fg-mini" id="timerCircleMini" cx="19" cy="19" r="16" stroke-dasharray="100.53" stroke-dashoffset="0"></circle>
+      </svg>
+      <div class="ad-timer-text-mini" id="timerTextMini">15</div>
+    </div>
+    <div class="ad-progress-track"><div class="ad-progress-fill" id="adProgressFill"></div></div>
+    <div class="ad-media-counter" id="adMediaCounter">1/1</div>
   </div>
-  <div class="ad-overlay-title" id="overlayTitle">Watching...</div>
-  <div class="ad-overlay-desc" id="overlayDesc">Do not close</div>
-  <button class="btn btn-gold ad-overlay-btn" id="overlayBtn" disabled>⏳ Wait...</button>
+  
+  <div class="ad-stage">
+    <div class="ad-media-wrap" id="overlayMedia"></div>
+    <div class="ad-dots" id="adDots"></div>
+    <button class="ad-sound-btn" id="adSoundBtn" onclick="toggleAdSound()" style="display:none;">
+      <span id="adSoundIcon">🔇</span>
+    </button>
+    <div class="ad-sound-hint hidden" id="adSoundHint">🔊 اضغط لتفعيل الصوت</div>
+  </div>
+  
+  <div class="ad-bottombar">
+    <div class="ad-info-block">
+      <div class="ad-info-title" id="overlayTitle">—</div>
+      <div class="ad-info-desc" id="overlayDesc">—</div>
+    </div>
+    <div class="ad-reward-badge" id="adRewardBadge">💰 +$0.20</div>
+    <button class="ad-claim-btn" id="overlayBtn" disabled>
+      <span class="btn-icon">⏳</span>
+      <span id="claimBtnText">Wait...</span>
+    </button>
+  </div>
 </div>
 
-<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-box">
     <div class="modal-title" id="modalTitle">—</div>
@@ -616,7 +741,6 @@
   </div>
 </div>
 
-<!-- NAV -->
 <nav class="nav" id="mainNav">
   <button class="nav-btn active" data-tab="home"><span class="icon">🏠</span><span id="navHome">Home</span></button>
   <button class="nav-btn" data-tab="tasks"><span class="icon">📋</span><span id="navTasks">Tasks</span></button>
@@ -643,11 +767,12 @@ let currentTab = "home", currentAdminTab = "stats";
 let LANGS = {}, lang = "ar";
 let newAdMedia = [];
 let hbTimer = null;
+let adPlayState = null;
+let adSoundEnabled = false;
 
 window.__BOT_USERNAME__ = "__BOT_USERNAME_PLACEHOLDER__";
 window.__ADMIN_CONTACT__ = "__ADMIN_CONTACT_PLACEHOLDER__";
 
-// Particles
 (function(){
   const c = document.getElementById("particles");
   for (let i=0;i<18;i++){
@@ -661,9 +786,6 @@ window.__ADMIN_CONTACT__ = "__ADMIN_CONTACT_PLACEHOLDER__";
   }
 })();
 
-// ═══════════════════════════════════════════════════════════════════════
-// API Helper
-// ═══════════════════════════════════════════════════════════════════════
 async function api(path, opts={}) {
   const res = await fetch(API + path, {
     headers: {"Content-Type": "application/json"},
@@ -956,6 +1078,8 @@ function showNextAd(){
 function renderAdHero(a){
   const wrap = document.getElementById("adHeroWrap");
   let mediaHTML = `<div class="ad-hero-media"><div class="placeholder">🔗</div></div>`;
+  let badgeHTML = "";
+  
   if (a.media_count > 0) {
     const m = a.media[0];
     if (m.type === "video") {
@@ -963,11 +1087,16 @@ function renderAdHero(a){
     } else {
       mediaHTML = `<div class="ad-hero-media"><img src="${m.url}" alt="" /></div>`;
     }
+    if (a.media_count > 1) {
+      badgeHTML = `<div class="ad-hero-badge">🖼️ ${a.media_count} ×</div>`;
+    }
   }
+  
   const redirect = a.redirect_url ? `<a class="ad-hero-redirect" href="${a.redirect_url}" target="_blank">🔗 ${a.button_text || (LANGS.open_link||"Open Link")}</a>` : "";
   wrap.innerHTML = `
     <div class="ad-hero">
       ${mediaHTML}
+      ${badgeHTML}
       <div class="ad-hero-body">
         <div class="ad-hero-title">${a.title}</div>
         <div class="ad-hero-desc">${a.description || ""}</div>
@@ -981,87 +1110,259 @@ function renderAdHero(a){
 
 function startWatchingCurrent(){ if(currentAd) watchAd(currentAd.id); }
 
+// ═══════════════════════════════════════════════════════════════════════
+// AD WATCH — Full-screen with sound toggle
+// ═══════════════════════════════════════════════════════════════════════
 async function watchAd(adId){
   const ad = ads.find(x => x.id === adId);
   if (!ad) return;
   if (user.ads_today >= user.daily_limit){ toast("Limit reached", "error"); return; }
 
-  const overlay = document.getElementById("adOverlay");
-  const overlayBtn = document.getElementById("overlayBtn");
-  const overlayTitle = document.getElementById("overlayTitle");
-  const overlayDesc = document.getElementById("overlayDesc");
-  const overlayMedia = document.getElementById("overlayMedia");
-  const timerWrap = document.getElementById("timerWrap");
-  const timerText = document.getElementById("timerText");
-  const timerCircle = document.getElementById("timerCircle");
+  const overlay        = document.getElementById("adOverlay");
+  const overlayBtn     = document.getElementById("overlayBtn");
+  const overlayTitle   = document.getElementById("overlayTitle");
+  const overlayDesc    = document.getElementById("overlayDesc");
+  const overlayMedia   = document.getElementById("overlayMedia");
+  const mediaCounter   = document.getElementById("adMediaCounter");
+  const topProgress    = document.getElementById("adProgressFill");
+  const timerTextMini  = document.getElementById("timerTextMini");
+  const timerCircleMini= document.getElementById("timerCircleMini");
+  const dotsContainer  = document.getElementById("adDots");
+  const rewardBadge    = document.getElementById("adRewardBadge");
+  const claimBtnText   = document.getElementById("claimBtnText");
+  const btnIcon        = overlayBtn.querySelector(".btn-icon");
+  const soundBtn       = document.getElementById("adSoundBtn");
+  const soundIcon      = document.getElementById("adSoundIcon");
+  const soundHint      = document.getElementById("adSoundHint");
+
+  adSoundEnabled = false;
+  soundIcon.textContent = "🔇";
+  soundBtn.classList.remove("on");
+  soundBtn.style.display = "none";
+  soundHint.classList.add("hidden");
 
   overlay.classList.add("active");
   overlayBtn.disabled = true;
-  overlayBtn.textContent = "⏳ Wait...";
-  overlayTitle.textContent = ad.title;
+  overlayBtn.onclick = null;
+  claimBtnText.textContent = "Wait...";
+  btnIcon.textContent = "⏳";
+  overlayTitle.textContent = ad.title || "Ad";
   overlayDesc.textContent = ad.description || "";
+  rewardBadge.textContent = "💰 +$" + ad.reward.toFixed(2);
+  topProgress.style.width = "0%";
 
-  if (ad.media_count === 0) {
-    overlayMedia.innerHTML = `<div style="font-size:80px;margin-bottom:20px;">🔗</div>`;
-    timerWrap.style.display = "block";
-  } else if (ad.media_count === 1) {
-    const m = ad.media[0];
-    if (m.type === "video") {
-      overlayMedia.innerHTML = `<video class="overlay-media" src="${m.url}" autoplay muted playsinline controls></video>`;
-      timerWrap.style.display = "none";
-    } else {
-      overlayMedia.innerHTML = `<img class="overlay-media" src="${m.url}" alt="" />`;
-      timerWrap.style.display = "block";
-    }
-  } else {
-    overlayMedia.innerHTML = `<div class="overlay-carousel">${
-      ad.media.map(m => m.type === "video"
-        ? `<video src="${m.url}" muted playsinline autoplay loop></video>`
-        : `<img src="${m.url}" alt="" />`).join("")
-    }</div>`;
-    timerWrap.style.display = "block";
+  let mediaList = ad.media || [];
+  if (mediaList.length === 0) {
+    mediaList = [{ type: "placeholder", url: "" }];
   }
 
-  if (ad.redirect_url && tg) tg.openLink(ad.redirect_url);
+  const totalDuration = ad.duration || 15;
+  const mediaCount = mediaList.length;
+  const perMedia = Math.max(3, Math.ceil(totalDuration / mediaCount));
+  const realTotal = perMedia * mediaCount;
 
-  const total = ad.duration || 15;
-  let remaining = total;
-  const circ = 2 * Math.PI * 60;
-  timerCircle.style.strokeDasharray = circ;
-  timerCircle.style.strokeDashoffset = 0;
-  timerText.textContent = remaining;
+  const hasVideo = mediaList.some(m => m.type === "video");
+  if (hasVideo) {
+    soundBtn.style.display = "flex";
+    soundHint.classList.remove("hidden");
+  }
 
-  const interval = setInterval(()=>{
-    remaining--;
-    timerText.textContent = remaining;
-    const offset = ((total - remaining)/total) * circ;
-    timerCircle.style.strokeDashoffset = offset;
-    if (remaining <= 0){
-      clearInterval(interval);
+  if (mediaCount > 1) {
+    dotsContainer.style.display = "flex";
+    dotsContainer.innerHTML = mediaList.map((_, i) =>
+      `<div class="ad-dot ${i === 0 ? "active" : ""}"></div>`
+    ).join("");
+  } else {
+    dotsContainer.style.display = "none";
+  }
+
+  function renderMedia(index){
+    const m = mediaList[index];
+    let html = "";
+    if (m.type === "video") {
+      html = `<video src="${m.url}" autoplay muted="${!adSoundEnabled}" playsinline controls preload="auto" id="adVideo-${index}"></video>`;
+    } else if (m.type === "image") {
+      html = `<img src="${m.url}" alt="" loading="eager" />`;
+    } else {
+      html = `<div class="placeholder-media">🔗</div>`;
+    }
+    overlayMedia.innerHTML = html;
+    overlayMedia.style.animation = "none";
+    void overlayMedia.offsetWidth;
+    overlayMedia.style.animation = "mediaIn 0.4s ease";
+
+    if (m.type === "video" && adSoundEnabled) {
+      const vid = document.getElementById(`adVideo-${index}`);
+      if (vid) {
+        vid.muted = false;
+        vid.volume = 1;
+        const p = vid.play();
+        if (p && p.catch) p.catch(()=>{});
+      }
+    }
+
+    document.querySelectorAll(".ad-dot").forEach((d, i) => {
+      d.classList.toggle("active", i === index);
+      d.classList.toggle("done", i < index);
+    });
+    mediaCounter.textContent = `${index + 1}/${mediaCount}`;
+
+    if (m.type === "video") {
+      soundBtn.style.display = "flex";
+    } else {
+      soundBtn.style.display = "none";
+    }
+  }
+
+  if (!document.getElementById("mediaInStyle")){
+    const s = document.createElement("style");
+    s.id = "mediaInStyle";
+    s.textContent = `@keyframes mediaIn{from{opacity:0;transform:scale(0.95);}to{opacity:1;transform:scale(1);}}`;
+    document.head.appendChild(s);
+  }
+
+  renderMedia(0);
+
+  const circ = 2 * Math.PI * 16;
+  timerCircleMini.style.strokeDasharray = circ;
+  timerCircleMini.style.strokeDashoffset = 0;
+
+  let elapsed = 0;
+  let lastShownIndex = 0;
+  timerTextMini.textContent = realTotal;
+
+  if (ad.redirect_url && tg) {
+    setTimeout(() => {
+      try { tg.openLink(ad.redirect_url); } catch(e){}
+    }, 2000);
+  }
+
+  if (adPlayState && adPlayState.interval) clearInterval(adPlayState.interval);
+
+  adPlayState = { interval: null, adId: ad.id, completed: false, totalDuration: realTotal };
+
+  adPlayState.interval = setInterval(() => {
+    elapsed++;
+    const remaining = Math.max(0, realTotal - elapsed);
+    timerTextMini.textContent = remaining;
+    const offset = (elapsed / realTotal) * circ;
+    timerCircleMini.style.strokeDashoffset = offset;
+
+    const pct = Math.min(100, (elapsed / realTotal) * 100);
+    topProgress.style.width = pct + "%";
+
+    const shouldBeIndex = Math.min(mediaCount - 1, Math.floor(elapsed / perMedia));
+    if (shouldBeIndex !== lastShownIndex) {
+      lastShownIndex = shouldBeIndex;
+      renderMedia(shouldBeIndex);
+    }
+
+    if (elapsed >= realTotal) {
+      clearInterval(adPlayState.interval);
+      adPlayState.interval = null;
+      adPlayState.completed = true;
       overlayBtn.disabled = false;
-      overlayBtn.textContent = "✅ Claim";
+      btnIcon.textContent = "🎁";
+      claimBtnText.textContent = "Claim $" + ad.reward.toFixed(2);
       overlayBtn.onclick = () => completeAd(ad.id);
-      overlayTitle.textContent = "🎉 Done!";
+
+      soundBtn.style.display = "none";
+      soundHint.classList.add("hidden");
+
+      document.querySelectorAll(".ad-dot").forEach(d => {
+        d.classList.remove("active");
+        d.classList.add("done");
+      });
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
     }
   }, 1000);
 }
 
-async function completeAd(adId){
+function toggleAdSound(){
+  adSoundEnabled = !adSoundEnabled;
+  const soundIcon = document.getElementById("adSoundIcon");
+  const soundBtn = document.getElementById("adSoundBtn");
+  const soundHint = document.getElementById("adSoundHint");
+  const videos = document.querySelectorAll("#overlayMedia video");
+
+  if (adSoundEnabled){
+    soundIcon.textContent = "🔊";
+    soundBtn.classList.add("on");
+    soundHint.classList.add("hidden");
+    videos.forEach(v => {
+      v.muted = false;
+      v.volume = 1;
+      const p = v.play();
+      if (p && p.catch) p.catch(()=>{});
+    });
+    if (navigator.vibrate) navigator.vibrate(30);
+  } else {
+    soundIcon.textContent = "🔇";
+    soundBtn.classList.remove("on");
+    videos.forEach(v => { v.muted = true; });
+  }
+}
+
+function closeAdOverlay(){
+  if (adPlayState && adPlayState.interval) {
+    clearInterval(adPlayState.interval);
+    adPlayState.interval = null;
+  }
+  const wasCompleted = adPlayState && adPlayState.completed;
+
   document.getElementById("adOverlay").classList.remove("active");
   document.getElementById("overlayMedia").innerHTML = "";
+  document.getElementById("adDots").innerHTML = "";
+  document.getElementById("adSoundBtn").style.display = "none";
+  document.getElementById("adSoundHint").classList.add("hidden");
+  adSoundEnabled = false;
+
+  if (!wasCompleted) {
+    toast("أكمل الإعلان لتحصل على المكافأة", "error");
+    if (currentAd) {
+      document.getElementById("adHeroWrap").innerHTML = "";
+      document.getElementById("startBtn").style.display = "block";
+      currentAd = null;
+    }
+  }
+  adPlayState = null;
+}
+
+async function completeAd(adId){
+  if (adPlayState && adPlayState.interval) {
+    clearInterval(adPlayState.interval);
+    adPlayState.interval = null;
+  }
+  document.getElementById("adOverlay").classList.remove("active");
+  document.getElementById("overlayMedia").innerHTML = "";
+  document.getElementById("adDots").innerHTML = "";
+  document.getElementById("adSoundBtn").style.display = "none";
+  document.getElementById("adSoundHint").classList.add("hidden");
+  adSoundEnabled = false;
+
   try {
-    const res = await api(`/api/ads/${adId}/watch`, {method:"POST", body:JSON.stringify({user_id:user.user_id})});
+    const res = await api(`/api/ads/${adId}/watch`, {
+      method: "POST",
+      body: JSON.stringify({ user_id: user.user_id }),
+    });
+
     user.balance = res.balance;
     user.ads_today = res.ads_today;
-    user.ads_watched = (user.ads_watched||0) + 1;
-    user.total_earned = (user.total_earned||0) + res.reward;
+    user.ads_watched = (user.ads_watched || 0) + 1;
+    user.total_earned = (user.total_earned || 0) + res.reward;
     updateUI(user);
-    toast(`🎉 +${money(res.reward)}`, "success");
+
+    toast(`🎉 +${money(res.reward)} — رصيدك ${money(res.balance)}`, "success");
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
     currentAd = null;
+    adPlayState = null;
     document.getElementById("adHeroWrap").innerHTML = "";
     document.getElementById("startBtn").style.display = "block";
     await loadAds();
-  } catch(e){ toast(e.message,"error"); }
+  } catch (e) {
+    toast(e.message, "error");
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1328,7 +1629,7 @@ async function renderAdminStats(c){
     <div class="admin-stat"><b>${s.tasks}</b><span>📋 Tasks</span></div>
     <div class="admin-stat"><b>${s.pending_wd}</b><span>⏳ Withdrawals</span></div>
     <div class="admin-stat"><b>${s.contact_req}</b><span>📞 Messages</span></div>
-    <div class="admin-stat"><b>$${s.total_balance}</b><span>💵 Total Balances</span></div>
+    <div class="admin-stat"><b>$${s.total_balance}</b><span>💵 Balances</span></div>
     <div class="admin-stat" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,170,0,0.05));border-color:var(--border-2);">
       <b style="font-size:28px;">$${s.paid.toFixed(2)}</b><span>💰 Total Paid</span>
     </div>
@@ -1377,7 +1678,7 @@ function adminCreateAdModal(){
     <input class="input input-rtl" id="aBtnText" placeholder="مثال: اشتر الآن" style="direction:rtl;text-align:right;" />
     <label class="label">Redirect URL</label>
     <input class="input" id="aRedirect" placeholder="https://..." />
-    <label class="label">Media (video / images)</label>
+    <label class="label">Media (video / images) — Multiple OK</label>
     <div class="media-grid" id="mediaGrid">
       <div class="media-add" onclick="pickMedia()">
         <div class="media-add-icon">➕</div>
@@ -1442,6 +1743,7 @@ function renderMediaGrid(){
       ${m.type === "video"
         ? `<video src="${m.preview}" muted playsinline></video>`
         : `<img src="${m.preview}" alt="" />`}
+      <div class="order-tag">#${i + 1}</div>
       <button class="remove" onclick="removeMedia(${i})">×</button>
     </div>
   `).join("");
@@ -1708,9 +2010,6 @@ async function adminSendBroadcast(){
   ]);
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// Refresh
-// ═══════════════════════════════════════════════════════════════════════
 setInterval(async ()=>{
   if (!user || document.hidden) return;
   try { const me = await api("/api/me?user_id=" + user.user_id); updateUI(me); } catch {}
