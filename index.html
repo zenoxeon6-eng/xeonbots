@@ -575,7 +575,7 @@
   .adg-media img{width:100%;height:auto;display:block;
     max-height:55vh;object-fit:cover;background:#000;animation:mediaIn 0.4s ease;}
   .adg-media video{width:100%;height:auto;display:block;
-    max-height:55vh;object-fit:cover;background:#000;animation:mediaIn 0.4s ease;}
+    max-height:55vh;object-fit:contain;background:#000;animation:mediaIn 0.4s ease;}
   @keyframes mediaIn{from{opacity:0;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}
   .adg-media.vertical img,.adg-media.vertical video{max-height:65vh;object-fit:contain;}
   .adg-media-badge{position:absolute;top:12px;right:12px;padding:5px 10px;
@@ -1294,8 +1294,29 @@ function showNextAd(){
   watchAd(a.id);
 }
 
+function showUnmuteButton(){
+  const container = document.getElementById("adgMedia");
+  if (!container) return;
+  if (container.querySelector(".adg-unmute")) return;
+  const btn = document.createElement("button");
+  btn.className = "adg-unmute";
+  btn.innerHTML = "🔇";
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    const v = document.getElementById("adActiveVideo");
+    if (v){
+      v.muted = false;
+      v.volume = 1;
+      v.play().catch(()=>{});
+    }
+    btn.remove();
+  };
+  container.style.position = "relative";
+  container.appendChild(btn);
+}
+
 // ═══════════════════════════════════════════════════════
-// ✅ AD WATCH — يشغّل الصور والفيديو مع الصوت
+// AD WATCH
 // ═══════════════════════════════════════════════════════
 async function watchAd(adId){
   const ad = ads.find(x => x.id === adId);
@@ -1374,11 +1395,9 @@ async function watchAd(adId){
     let html = "";
 
     if (mtype === "video"){
-      // ✅ الفيديو مع الصوت + autoplay محاولة + controls كاحتياط
-      html = `<video src="${m.url}" playsinline controls preload="auto"
-        webkit-playsinline x5-playsinline
+      html = `<video id="adActiveVideo" src="${m.url}" playsinline webkit-playsinline
+        x5-playsinline preload="auto" controls
         style="width:100%;max-height:55vh;background:#000;object-fit:contain;"
-        onloadeddata="try{this.muted=false;this.volume=1;this.play().catch(()=>{this.muted=true;this.play().catch(()=>{})});}catch(e){}"
         onerror="this.parentElement.innerHTML='<div class=\\'adg-media-fallback\\'>🎬</div>'"></video>`;
     } else if (mtype === "image" || mtype === "photo"){
       html = `<img src="${m.url}" alt="" loading="eager"
@@ -1393,6 +1412,21 @@ async function watchAd(adId){
 
     mediaEl.innerHTML = html;
     mediaEl.classList.remove("vertical");
+
+    const vid = document.getElementById("adActiveVideo");
+    if (vid){
+      vid.muted = false;
+      vid.volume = 1;
+      const p = vid.play();
+      if (p && p.catch){
+        p.catch(() => {
+          vid.muted = true;
+          vid.play().catch(()=>{});
+          showUnmuteButton();
+        });
+      }
+      if (vid.muted) showUnmuteButton();
+    }
   }
 
   showMedia(0);
@@ -1479,10 +1513,15 @@ function openAdLink(event){
     return;
   }
 
-  // إلغاء كتم الصوت عند الضغط على زر "فتح"
-  const v = document.querySelector("#adgMedia video");
+  const v = document.getElementById("adActiveVideo");
   if (v){
-    try { v.muted = false; v.volume = 1; v.play().catch(()=>{}); } catch(e){}
+    try {
+      v.muted = false;
+      v.volume = 1;
+      v.play().catch(()=>{});
+      const ub = document.querySelector(".adg-unmute");
+      if (ub) ub.remove();
+    } catch(e){}
   }
 
   const link = ad.redirect_url || ad.url || "";
