@@ -1,3 +1,4 @@
+
 import os, hmac, json, time, sqlite3, hashlib, asyncio, re, shutil, tempfile
 from urllib.parse import parse_qsl
 from datetime import datetime, timezone, timedelta
@@ -20,7 +21,7 @@ from telegram.ext import (
 from telegram.error import Conflict, TelegramError
 
 # ═══════════════════════════════════════════════════════════════════════
-# ⚙️ الإعدادات العامة
+# ⚙️ الإعدادات
 # ═══════════════════════════════════════════════════════════════════════
 BOT_TOKEN      = os.getenv("BOT_TOKEN", "8909959176:AAHtOv4alGndeFTY0_Juqf5hpLsQV5z-hlc")
 WEBAPP_URL     = os.getenv("WEBAPP_URL", "https://xeonbots.onrender.com/").rstrip("/") + "/"
@@ -41,11 +42,12 @@ DEF_MIN_WITHDRAW   = 10.00
 DEF_REFERRAL_BONUS = 0.50
 DEF_DAILY_BONUS    = 0.10
 DEF_TASK_WAIT      = 10
+DEF_TASK_CONFIRM_DELAY = 3
 
 START_TIME = time.time()
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🛡️ Anti-Spam Rate Limiter
+# 🛡️ Rate Limiter
 # ═══════════════════════════════════════════════════════════════════════
 RATE_LIMIT = defaultdict(lambda: deque(maxlen=20))
 
@@ -80,8 +82,10 @@ LANGS = {
         "no_ads": "لا إعلانات متاحة",
         "all_watched": "شاهدت كل الإعلانات المتاحة، عد لاحقًا",
         "daily_reward": "المكافأة اليومية", "claim": "استلام", "wait": "انتظر",
-        "tasks": "المهام", "task_open": "افتح الرابط",
-        "task_opened": "تم فتح الرابط", "task_wait": "انتظر {} ثانية",
+        "tasks": "المهام", "task_open": "انضم الآن",
+        "task_opened": "تم فتح الرابط",
+        "task_confirm": "تأكيد الدخول",
+        "task_wait": "انتظر {} ثانية",
         "task_ready": "استلم", "task_done": "تم",
         "wallet": "المحفظة", "profile": "حسابي", "home": "الرئيسية", "top": "المتصدرون",
         "withdraw": "سحب", "amount": "المبلغ",
@@ -103,6 +107,11 @@ LANGS = {
         "watch_now_btn": "شاهد الآن", "claim_btn": "استلم {}",
         "watching": "جارٍ المشاهدة", "wait_txt": "انتظر", "done": "تم",
         "sound_on": "اضغط لتفعيل الصوت",
+        "confirm_first": "اضغط زر انضم أولاً",
+        "confirm_entry": "تأكيد الدخول",
+        "opening": "جارٍ الفتح...",
+        "link_opened": "تم فتح الرابط ✓",
+        "return_confirm": "عد واضغط تأكيد الدخول",
     },
     "en": {
         "dir": "ltr", "name": "English",
@@ -120,8 +129,10 @@ LANGS = {
         "no_ads": "No ads available",
         "all_watched": "You watched all available ads, come back later",
         "daily_reward": "Daily Reward", "claim": "Claim", "wait": "Wait",
-        "tasks": "Tasks", "task_open": "Open Link",
-        "task_opened": "Link Opened", "task_wait": "Wait {}s",
+        "tasks": "Tasks", "task_open": "Join Now",
+        "task_opened": "Link Opened",
+        "task_confirm": "Confirm Entry",
+        "task_wait": "Wait {}s",
         "task_ready": "Claim", "task_done": "Done",
         "wallet": "Wallet", "profile": "Profile", "home": "Home", "top": "Top",
         "withdraw": "Withdraw", "amount": "Amount",
@@ -143,6 +154,11 @@ LANGS = {
         "watch_now_btn": "Watch Now", "claim_btn": "Claim {}",
         "watching": "Watching", "wait_txt": "Wait", "done": "Done",
         "sound_on": "Tap to enable sound",
+        "confirm_first": "Click Join first",
+        "confirm_entry": "Confirm Entry",
+        "opening": "Opening...",
+        "link_opened": "Link Opened ✓",
+        "return_confirm": "Return & press Confirm Entry",
     },
 }
 
@@ -253,7 +269,10 @@ def init_db():
             PRIMARY KEY (user_id, task_id)
         );
         CREATE TABLE IF NOT EXISTS task_clicks (
-            user_id INTEGER, task_id INTEGER, clicked_at TEXT,
+            user_id INTEGER, task_id INTEGER,
+            clicked_at TEXT,
+            opened_at TEXT,
+            confirmed_at TEXT,
             PRIMARY KEY (user_id, task_id)
         );
         CREATE TABLE IF NOT EXISTS user_ads (
@@ -280,12 +299,15 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_user_ads ON user_ads(user_id, ad_id);
         """)
 
+        # Migrations
         for tbl, col, typ in [
             ("ads", "media_json", "TEXT"),
             ("ads", "button_text", "TEXT"),
             ("ads", "redirect_url", "TEXT"),
             ("users", "lang", "TEXT DEFAULT 'ar'"),
             ("users", "last_seen", "INTEGER DEFAULT 0"),
+            ("task_clicks", "opened_at", "TEXT"),
+            ("task_clicks", "confirmed_at", "TEXT"),
         ]:
             try:
                 conn.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {typ}")
@@ -509,7 +531,7 @@ async def external_heartbeat():
 # ═══════════════════════════════════════════════════════════════════════
 # 🚀 FastAPI
 # ═══════════════════════════════════════════════════════════════════════
-app = FastAPI(title="AdVault Pro VIP", version="7.0.0")
+app = FastAPI(title="AdVault Pro VIP", version="8.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -607,7 +629,7 @@ async def api_set_lang(req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📢 الإعلانات — إخفاء دائم للإعلانات المُشاهدة
+# 📢 الإعلانات — إخفاء دائم
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/ads")
 async def api_ads(user_id: int):
@@ -617,7 +639,6 @@ async def api_ads(user_id: int):
             raise HTTPException(404, "غير موجود")
         reset_ads_if_needed(dict(row))
 
-        # ═══ إخفاء دائم: أي إعلان شاهده المستخدم لا يظهر مجددًا ═══
         ads = conn.execute(
             """SELECT id, title, description, url, contact, type,
                       video_file_id, image_file_id, media_json,
@@ -731,7 +752,6 @@ async def api_watch_ad(ad_id: int, req: Request):
         ad = conn.execute("SELECT * FROM ads WHERE id=? AND active=1", (ad_id,)).fetchone()
         if not ad:
             raise HTTPException(404, "الإعلان غير متاح")
-        # منع تكرار مشاهدة نفس الإعلان نهائيًا
         already = conn.execute(
             "SELECT 1 FROM user_ads WHERE user_id=? AND ad_id=?",
             (user_id, ad_id)).fetchone()
@@ -752,7 +772,7 @@ async def api_watch_ad(ad_id: int, req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📋 المهام
+# 📋 المهام — نظام 4 مراحل
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/tasks")
 async def api_tasks(user_id: int):
@@ -760,9 +780,18 @@ async def api_tasks(user_id: int):
         rows = conn.execute("SELECT * FROM tasks WHERE active=1 ORDER BY id DESC").fetchall()
         done = {r["task_id"] for r in conn.execute(
             "SELECT task_id FROM user_tasks WHERE user_id=?", (user_id,)).fetchall()}
-        clicks = {r["task_id"]: r["clicked_at"] for r in conn.execute(
-            "SELECT task_id, clicked_at FROM task_clicks WHERE user_id=?",
-            (user_id,)).fetchall()}
+        clicks = {}
+        try:
+            for r in conn.execute(
+                "SELECT task_id, clicked_at, opened_at, confirmed_at FROM task_clicks WHERE user_id=?",
+                (user_id,)).fetchall():
+                clicks[r["task_id"]] = {
+                    "clicked_at": r["clicked_at"],
+                    "opened_at": r["opened_at"] if "opened_at" in r.keys() else None,
+                    "confirmed_at": r["confirmed_at"] if "confirmed_at" in r.keys() else None,
+                }
+        except sqlite3.OperationalError:
+            pass
 
     wait_seconds = int(get_setting("task_wait", "10"))
     now = datetime.now(timezone.utc)
@@ -776,27 +805,55 @@ async def api_tasks(user_id: int):
             "url": r["url"] or "",
             "icon": r["icon"] or "🎯",
             "completed": r["id"] in done,
-            "started": r["id"] in clicks,
-            "can_claim": False,
+            "state": "open",
             "wait_seconds": wait_seconds,
             "remaining": 0,
         }
-        if r["id"] in clicks and not item["completed"]:
+
+        if item["completed"]:
+            item["state"] = "done"
+            out.append(item)
+            continue
+
+        c = clicks.get(r["id"])
+        if not c:
+            item["state"] = "open"
+            out.append(item)
+            continue
+
+        # المستخدم ضغط "انضم الآن" فقط
+        if c["clicked_at"] and not c.get("opened_at"):
+            item["state"] = "opened"
+            out.append(item)
+            continue
+
+        # تم تأكيد الدخول — انتظار
+        if c.get("opened_at") and not c.get("confirmed_at"):
             try:
-                clicked_at = datetime.fromisoformat(clicks[r["id"]])
-                if clicked_at.tzinfo is None:
-                    clicked_at = clicked_at.replace(tzinfo=timezone.utc)
-                diff = (now - clicked_at).total_seconds()
+                opened_at = datetime.fromisoformat(c["opened_at"])
+                if opened_at.tzinfo is None:
+                    opened_at = opened_at.replace(tzinfo=timezone.utc)
+                diff = (now - opened_at).total_seconds()
                 item["remaining"] = max(0, int(wait_seconds - diff))
-                item["can_claim"] = diff >= wait_seconds
+                if diff >= wait_seconds:
+                    item["state"] = "ready"
+                else:
+                    item["state"] = "waiting"
             except Exception:
-                pass
+                item["state"] = "waiting"
+                item["remaining"] = wait_seconds
+            out.append(item)
+            continue
+
+        item["state"] = "ready"
         out.append(item)
+
     return out
 
 
 @app.post("/api/tasks/{task_id}/start")
 async def api_task_start(task_id: int, req: Request):
+    """المستخدم ضغط زر انضم — يفتح الرابط ويسجل الوقت"""
     body = await req.json()
     user_id = int(body.get("user_id", 0))
     with db() as conn:
@@ -806,10 +863,78 @@ async def api_task_start(task_id: int, req: Request):
         if conn.execute("SELECT 1 FROM user_tasks WHERE user_id=? AND task_id=?",
                         (user_id, task_id)).fetchone():
             raise HTTPException(400, "منجزة مسبقًا")
+
+        try:
+            existing = conn.execute(
+                "SELECT * FROM task_clicks WHERE user_id=? AND task_id=?",
+                (user_id, task_id)).fetchone()
+        except sqlite3.OperationalError:
+            existing = None
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        if existing:
+            conn.execute(
+                "UPDATE task_clicks SET clicked_at=?, opened_at=NULL, confirmed_at=NULL WHERE user_id=? AND task_id=?",
+                (now_iso, user_id, task_id))
+        else:
+            try:
+                conn.execute(
+                    "INSERT INTO task_clicks (user_id, task_id, clicked_at) VALUES (?,?,?)",
+                    (user_id, task_id, now_iso))
+            except sqlite3.OperationalError:
+                pass
+
+    return {
+        "ok": True,
+        "state": "opened",
+        "message": "عد للتطبيق واضغط تأكيد الدخول",
+    }
+
+
+@app.post("/api/tasks/{task_id}/confirm")
+async def api_task_confirm(task_id: int, req: Request):
+    """المستخدم أكد أنه دخل الرابط"""
+    body = await req.json()
+    user_id = int(body.get("user_id", 0))
+    min_delay = DEF_TASK_CONFIRM_DELAY
+
+    with db() as conn:
+        task = conn.execute("SELECT * FROM tasks WHERE id=? AND active=1", (task_id,)).fetchone()
+        if not task:
+            raise HTTPException(404, "المهمة غير موجودة")
+        if conn.execute("SELECT 1 FROM user_tasks WHERE user_id=? AND task_id=?",
+                        (user_id, task_id)).fetchone():
+            raise HTTPException(400, "منجزة مسبقًا")
+
+        click = conn.execute(
+            "SELECT * FROM task_clicks WHERE user_id=? AND task_id=?",
+            (user_id, task_id)).fetchone()
+        if not click or not click["clicked_at"]:
+            raise HTTPException(400, "اضغط زر انضم أولاً")
+
+        try:
+            clicked_at = datetime.fromisoformat(click["clicked_at"])
+            if clicked_at.tzinfo is None:
+                clicked_at = clicked_at.replace(tzinfo=timezone.utc)
+            diff = (datetime.now(timezone.utc) - clicked_at).total_seconds()
+            if diff < min_delay:
+                raise HTTPException(400, f"انتظر {int(min_delay - diff)} ثانية قبل التأكيد")
+        except HTTPException:
+            raise
+        except Exception:
+            pass
+
+        now_iso = datetime.now(timezone.utc).isoformat()
         conn.execute(
-            "INSERT OR REPLACE INTO task_clicks (user_id, task_id, clicked_at) VALUES (?,?,?)",
-            (user_id, task_id, datetime.now(timezone.utc).isoformat()))
-    return {"ok": True, "wait_seconds": int(get_setting("task_wait", "10"))}
+            "UPDATE task_clicks SET opened_at=? WHERE user_id=? AND task_id=?",
+            (now_iso, user_id, task_id))
+
+    wait_seconds = int(get_setting("task_wait", "10"))
+    return {
+        "ok": True,
+        "state": "waiting",
+        "wait_seconds": wait_seconds,
+    }
 
 
 @app.post("/api/tasks/{task_id}/claim")
@@ -827,22 +952,26 @@ async def api_task_claim(task_id: int, req: Request):
             raise HTTPException(400, "منجزة مسبقًا")
 
         click = conn.execute(
-            "SELECT clicked_at FROM task_clicks WHERE user_id=? AND task_id=?",
+            "SELECT * FROM task_clicks WHERE user_id=? AND task_id=?",
             (user_id, task_id)).fetchone()
         if not click:
-            raise HTTPException(400, "يجب فتح الرابط أولاً")
+            raise HTTPException(400, "اضغط انضم أولاً")
+        if not click["clicked_at"]:
+            raise HTTPException(400, "لم يتم الضغط")
+        if "opened_at" not in click.keys() or not click["opened_at"]:
+            raise HTTPException(400, "أكد الدخول أولاً")
 
         try:
-            clicked_at = datetime.fromisoformat(click["clicked_at"])
-            if clicked_at.tzinfo is None:
-                clicked_at = clicked_at.replace(tzinfo=timezone.utc)
-            diff = (datetime.now(timezone.utc) - clicked_at).total_seconds()
+            opened_at = datetime.fromisoformat(click["opened_at"])
+            if opened_at.tzinfo is None:
+                opened_at = opened_at.replace(tzinfo=timezone.utc)
+            diff = (datetime.now(timezone.utc) - opened_at).total_seconds()
             if diff < wait_seconds:
                 raise HTTPException(400, f"انتظر {int(wait_seconds - diff)} ثانية")
         except HTTPException:
             raise
         except Exception:
-            raise HTTPException(400, "خطأ في التحقق")
+            pass
 
         conn.execute(
             "INSERT INTO user_tasks (user_id, task_id, completed_at) VALUES (?,?,?)",
@@ -882,9 +1011,6 @@ async def api_daily(req: Request):
     return {"reward": reward, "streak": streak, "balance": round(row["balance"], 2)}
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🏆 المتصدرون
-# ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/leaderboard")
 async def api_leaderboard():
     with db() as conn:
@@ -991,7 +1117,7 @@ async def api_contact_request(req: Request):
     if not message:
         raise HTTPException(400, "الرسالة مطلوبة")
     if not rate_ok(user_id, max_hits=3, window=60):
-        raise HTTPException(429, "أرسلت كثيرًا، انتظر قليلًا")
+        raise HTTPException(429, "أرسلت كثيرًا")
     with db() as conn:
         row = conn.execute("SELECT username FROM users WHERE user_id=?", (user_id,)).fetchone()
         username = row["username"] if row else ""
@@ -1007,9 +1133,6 @@ async def api_contact_request(req: Request):
     return {"ok": True}
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🔔 إشعارات
-# ═══════════════════════════════════════════════════════════════════════
 async def notify_admin_withdrawal(admin, wid, user_id, amount, country,
                                   method_name, account_json):
     if not BOT_TOKEN:
@@ -1541,25 +1664,18 @@ async def cmd_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_lang(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = update.effective_user.id
     args = context.args
-    with db() as conn:
-        row = conn.execute("SELECT lang FROM users WHERE user_id=?", (uid,)).fetchone()
-    current = (row["lang"] if row else "ar") or "ar"
-
     if args and args[0] in LANGS:
         new_lang = args[0]
         with db() as conn:
             conn.execute("UPDATE users SET lang=? WHERE user_id=?", (new_lang, uid))
         await update.message.reply_text(
-            f"✅ Language set to: *{LANGS[new_lang]['name']}*",
-            parse_mode="Markdown")
+            f"✅ Language: *{LANGS[new_lang]['name']}*", parse_mode="Markdown")
         return
-
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("🇸🇦 العربية", callback_data="lang_ar"),
          InlineKeyboardButton("🇬🇧 English", callback_data="lang_en")],
     ])
-    await update.message.reply_text("🌐 اختر اللغة / Choose language",
-                                    reply_markup=kb)
+    await update.message.reply_text("🌐 اختر اللغة / Choose language", reply_markup=kb)
 
 
 async def callback_set_lang(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1580,8 +1696,7 @@ async def callback_lang_choice(update: Update, context: ContextTypes.DEFAULT_TYP
         return
     with db() as conn:
         conn.execute("UPDATE users SET lang=? WHERE user_id=?", (lang_code, q.from_user.id))
-    name = LANGS[lang_code]["name"]
-    await q.edit_message_text(f"✅ {name}")
+    await q.edit_message_text(f"✅ {LANGS[lang_code]['name']}")
     try:
         await cmd_start(update, context)
     except Exception:
@@ -1734,7 +1849,7 @@ async def run_bot():
             print("✅ Polling started")
             break
         except Conflict:
-            print("⚠️ Conflict — إعادة المحاولة بعد 5s")
+            print("⚠️ Conflict — retry in 5s")
             await asyncio.sleep(5)
         except Exception as e:
             print(f"⚠️ polling: {e}")
@@ -1759,7 +1874,6 @@ async def main():
     print(f"🤖 @{BOT_USERNAME}")
     print(f"💓 Heartbeat: {PING_INTERVAL}s")
     print(f"⏱ Task wait: {DEF_TASK_WAIT}s")
-    print(f"🚫 Ads are hidden PERMANENTLY after watching")
 
     await asyncio.gather(
         run_web(),
