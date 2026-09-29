@@ -59,7 +59,7 @@
     box-shadow:0 0 10px var(--green);animation:hbPulse 1s ease-in-out infinite;}
   @keyframes hbPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.4);opacity:0.6;}}
 
-  /* ═══════════ BANK CARD ═══════════ */
+  /* BANK CARD */
   .bank-card-wrap{width:100%;margin-bottom:14px;}
   .bank-card{
     position:relative;width:100%;aspect-ratio:1.586 / 1;
@@ -67,8 +67,7 @@
     background:linear-gradient(135deg,#0b0b22 0%,#14143a 25%,#0a0a1e 50%,#1a1a44 75%,#0b0b22 100%);
     box-shadow:0 25px 70px rgba(0,0,0,0.8),0 0 0 1px rgba(255,215,0,0.35),
       inset 0 1px 0 rgba(255,255,255,0.15),inset 0 -1px 0 rgba(0,0,0,0.5);
-    overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;isolation:isolate;
-  }
+    overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;isolation:isolate;}
   .bank-card::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
     background:radial-gradient(circle at 15% 10%,rgba(255,215,0,0.35),transparent 45%),
       radial-gradient(circle at 85% 90%,rgba(168,85,247,0.28),transparent 45%),
@@ -82,7 +81,6 @@
       rgba(255,215,0,0.18) 50%,rgba(255,255,255,0.1) 55%,transparent 70%);
     background-size:250% 250%;animation:holo 6s linear infinite;mix-blend-mode:overlay;}
   @keyframes holo{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-
   .card-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:3;}
   .card-brand{font-size:11px;font-weight:900;letter-spacing:2.5px;color:var(--gold);
     text-shadow:0 0 24px rgba(255,215,0,0.6),0 2px 4px rgba(0,0,0,0.5);
@@ -95,41 +93,26 @@
   .card-contactless{font-size:16px;color:var(--gold);transform:rotate(90deg);opacity:0.85;
     filter:drop-shadow(0 0 8px rgba(255,215,0,0.6));letter-spacing:-2px;
     position:absolute;top:0;inset-inline-end:30px;}
-
   .card-chip{width:40px;height:30px;border-radius:6px;position:relative;margin-top:2%;z-index:3;
     background:linear-gradient(135deg,#f7e079 0%,#c9a227 25%,#8b6914 50%,#c9a227 75%,#f7e079 100%);
     box-shadow:inset 0 0 8px rgba(0,0,0,0.6),inset 0 1px 2px rgba(255,255,255,0.7),0 2px 6px rgba(0,0,0,0.5);}
   .card-chip::before{content:"";position:absolute;inset:5px;border-radius:4px;border:1px solid rgba(0,0,0,0.35);
     background:linear-gradient(90deg,transparent 46%,rgba(0,0,0,0.4) 46%,rgba(0,0,0,0.4) 54%,transparent 54%),
       linear-gradient(0deg,transparent 46%,rgba(0,0,0,0.4) 46%,rgba(0,0,0,0.4) 54%,transparent 54%);}
-
   .card-number{font-family:"SF Mono","Courier New",monospace;
     font-size:clamp(12px,3vw,16px);letter-spacing:2px;
     color:rgba(255,245,200,0.95);
     text-shadow:0 1px 0 rgba(0,0,0,0.9),0 -1px 0 rgba(255,255,255,0.15),0 0 15px rgba(255,215,0,0.35);
     font-weight:700;direction:ltr;text-align:left;padding:1% 0;z-index:3;position:relative;line-height:1.1;}
-
-  /* Balance على يسار البطاقة تحت الثلاثة خطوط */
-  .card-balance{
-    position:absolute;
-    bottom:22%;
-    inset-inline-start:6%;
-    z-index:4;
-    text-align:start;
-  }
-  .card-balance-label{
-    font-size:7px;letter-spacing:2.5px;color:rgba(255,255,255,0.5);
-    text-transform:uppercase;font-weight:800;margin-bottom:1px;
-  }
-  .card-balance-amount{
-    font-size:clamp(16px,4.5vw,22px);font-weight:900;line-height:1;
+  .card-balance{position:absolute;bottom:22%;inset-inline-start:6%;z-index:4;text-align:start;}
+  .card-balance-label{font-size:7px;letter-spacing:2.5px;color:rgba(255,255,255,0.5);
+    text-transform:uppercase;font-weight:800;margin-bottom:1px;}
+  .card-balance-amount{font-size:clamp(16px,4.5vw,22px);font-weight:900;line-height:1;
     background:linear-gradient(180deg,#fff9d6 0%,var(--gold) 45%,var(--gold-3) 100%);
     -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
     text-shadow:0 0 40px rgba(255,215,0,0.5);
     letter-spacing:-1px;font-variant-numeric:tabular-nums;
-    filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));
-  }
-
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));}
   .card-bottom{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:3;gap:8px;}
   .card-holder-block{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
   .card-label{font-size:7px;color:var(--text-dim);letter-spacing:2.5px;text-transform:uppercase;font-weight:800;}
@@ -177,7 +160,6 @@
   .section-title{font-size:15px;font-weight:800;margin:22px 0 12px;display:flex;align-items:center;gap:8px;}
   .section-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border-2),transparent);margin-inline-start:8px;}
 
-  /* Ad Row — البطاقة التي تفتح الإعلان مباشرة */
   .ad-row{display:flex;align-items:center;gap:12px;padding:14px;
     background:linear-gradient(160deg,var(--glass-2),var(--glass));
     border:1px solid var(--border);border-radius:18px;margin-bottom:10px;
@@ -193,189 +175,114 @@
     background:rgba(0,230,118,0.15);color:var(--green);
     border:1px solid rgba(0,230,118,0.35);white-space:nowrap;}
 
-  /* ═══════════ AD OVERLAY — adsgram style ═══════════ */
-  .adg-overlay{
-    position:fixed;inset:0;z-index:9998;
-    background:#0a0e1a;
-    display:none;flex-direction:column;overflow:hidden;
-  }
+  /* AD OVERLAY — adsgram style */
+  .adg-overlay{position:fixed;inset:0;z-index:9998;background:#0a0e1a;
+    display:none;flex-direction:column;overflow:hidden;}
   .adg-overlay.active{display:flex;animation:adgFade 0.3s ease;}
   @keyframes adgFade{from{opacity:0;}to{opacity:1;}}
-
-  .adg-topbar{
-    display:flex;align-items:center;gap:10px;
-    padding:12px 16px;background:#0a0e1a;flex-shrink:0;
-  }
-  .adg-app-logo{
-    width:26px;height:26px;border-radius:8px;
+  .adg-topbar{display:flex;align-items:center;gap:10px;
+    padding:12px 16px;background:#0a0e1a;flex-shrink:0;}
+  .adg-app-logo{width:26px;height:26px;border-radius:8px;
     background:linear-gradient(135deg,#4f9bff,#2563eb);
     display:flex;align-items:center;justify-content:center;
-    font-size:13px;font-weight:900;color:#fff;flex-shrink:0;
-  }
+    font-size:13px;font-weight:900;color:#fff;flex-shrink:0;}
   .adg-app-name{font-size:14px;font-weight:700;color:#fff;flex:1;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .adg-close{
-    width:32px;height:32px;border-radius:50%;
+  .adg-close{width:32px;height:32px;border-radius:50%;
     background:rgba(255,255,255,0.08);
     border:none;color:#fff;font-size:14px;font-weight:900;
     display:flex;align-items:center;justify-content:center;
-    cursor:pointer;flex-shrink:0;transition:all 0.2s;
-  }
+    cursor:pointer;flex-shrink:0;transition:all 0.2s;}
   .adg-close:active{transform:scale(0.9);background:rgba(255,255,255,0.15);}
-  .adg-menu{
-    width:32px;height:32px;border-radius:50%;
+  .adg-menu{width:32px;height:32px;border-radius:50%;
     background:transparent;border:none;color:#fff;font-size:18px;
     display:flex;align-items:center;justify-content:center;
-    cursor:pointer;flex-shrink:0;
-  }
+    cursor:pointer;flex-shrink:0;}
 
-  /* Progress segments */
-  .adg-progress-bar{
-    display:flex;gap:4px;padding:0 16px 10px;
-    background:#0a0e1a;flex-shrink:0;
-  }
-  .adg-seg{
-    flex:1;height:3px;background:rgba(255,255,255,0.15);
-    border-radius:2px;overflow:hidden;position:relative;
-  }
-  .adg-seg-fill{
-    position:absolute;top:0;left:0;height:100%;width:0%;
+  .adg-progress-bar{display:flex;gap:4px;padding:0 16px 10px;
+    background:#0a0e1a;flex-shrink:0;}
+  .adg-seg{flex:1;height:3px;background:rgba(255,255,255,0.15);
+    border-radius:2px;overflow:hidden;position:relative;}
+  .adg-seg-fill{position:absolute;top:0;left:0;height:100%;width:0%;
     background:#3b82f6;border-radius:2px;
-    transition:width 0.1s linear;
-  }
+    transition:width 0.3s linear;}
   .adg-seg.active .adg-seg-fill{background:#3b82f6;}
   .adg-seg.done .adg-seg-fill{width:100%;background:#3b82f6;}
 
-  .adg-content{
-    flex:1;overflow-y:auto;overflow-x:hidden;
-    -webkit-overflow-scrolling:touch;
-    padding-bottom:110px;
-  }
+  .adg-content{flex:1;overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;padding-bottom:110px;}
 
-  /* Media — صورة أو فيديو */
-  .adg-media{
-    width:100%;background:#000;
+  .adg-media{width:100%;background:#000;
     position:relative;overflow:hidden;
-    display:flex;align-items:center;justify-content:center;
-  }
+    display:flex;align-items:center;justify-content:center;}
   .adg-media img,
-  .adg-media video{
-    width:100%;height:auto;display:block;
-    max-height:55vh;object-fit:cover;
-    background:#000;
-  }
+  .adg-media video{width:100%;height:auto;display:block;
+    max-height:55vh;object-fit:cover;background:#000;
+    animation:mediaIn 0.4s ease;}
+  @keyframes mediaIn{from{opacity:0;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}
   .adg-media.vertical img,
-  .adg-media.vertical video{
-    max-height:65vh;object-fit:contain;
-  }
-  .adg-media-badge{
-    position:absolute;top:12px;right:12px;
+  .adg-media.vertical video{max-height:65vh;object-fit:contain;}
+  .adg-media-badge{position:absolute;top:12px;right:12px;
     padding:5px 10px;
     background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);
     border-radius:10px;font-size:11px;font-weight:800;
     color:#fff;z-index:2;
     border:1px solid rgba(255,255,255,0.15);
-  }
+    font-family:"SF Mono",monospace;}
 
-  .adg-creative{
-    padding:18px 16px 0;
-    background:linear-gradient(180deg,#0a0e1a,#0d1424);
-  }
-  .adg-creative-title{
-    font-size:20px;font-weight:900;
-    color:#fff;line-height:1.35;
-    margin-bottom:10px;
-    text-align:right;
-    letter-spacing:-0.3px;
-  }
-  .adg-creative-desc{
-    font-size:14px;color:rgba(255,255,255,0.75);
-    line-height:1.6;margin-bottom:16px;
-    text-align:right;
-  }
+  .adg-creative{padding:18px 16px 0;
+    background:linear-gradient(180deg,#0a0e1a,#0d1424);}
+  .adg-creative-title{font-size:20px;font-weight:900;
+    color:#fff;line-height:1.35;margin-bottom:10px;
+    text-align:right;letter-spacing:-0.3px;}
+  .adg-creative-desc{font-size:14px;color:rgba(255,255,255,0.75);
+    line-height:1.6;margin-bottom:16px;text-align:right;}
 
-  /* CTA Button */
-  .adg-cta-btn{
-    display:flex;align-items:center;justify-content:space-between;
+  .adg-cta-btn{display:flex;align-items:center;justify-content:space-between;
     width:100%;padding:16px 20px;
     background:linear-gradient(135deg,#4f9bff,#2563eb);
     border:none;border-radius:14px;
     color:#fff;font-size:16px;font-weight:900;
     font-family:inherit;cursor:pointer;
     box-shadow:0 8px 24px rgba(37,99,235,0.4);
-    transition:all 0.2s;text-decoration:none;
-    margin-bottom:16px;
-  }
+    transition:all 0.2s;text-decoration:none;margin-bottom:16px;}
   .adg-cta-btn:active{transform:scale(0.98);box-shadow:0 4px 16px rgba(37,99,235,0.6);}
-  .adg-cta-btn.claimed{
-    background:linear-gradient(135deg,#10b981,#059669);
-    box-shadow:0 8px 24px rgba(16,185,129,0.4);
-    cursor:default;
-  }
+  .adg-cta-btn.claimed{background:linear-gradient(135deg,#10b981,#059669);
+    box-shadow:0 8px 24px rgba(16,185,129,0.4);cursor:default;}
   .adg-cta-btn.claimed:active{transform:none;}
-  .adg-cta-text{
-    flex:1;
-    display:flex;align-items:center;justify-content:center;
-  }
+  .adg-cta-text{flex:1;display:flex;align-items:center;justify-content:center;}
   .adg-cta-icon{font-size:22px;}
 
-  /* Reward Box */
-  .adg-reward-box{
-    margin:0 16px 16px;
-    padding:16px;
+  .adg-reward-box{margin:0 16px 16px;padding:16px;
     background:rgba(255,255,255,0.05);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:16px;
-  }
-  .adg-reward-title{
-    font-size:16px;font-weight:800;color:#fff;
-    text-align:right;margin-bottom:8px;
-  }
-  .adg-reward-desc{
-    font-size:13px;color:rgba(255,255,255,0.7);
-    line-height:1.7;text-align:right;
-  }
-  .adg-reward-brand{
-    display:flex;align-items:center;gap:10px;
+    border:1px solid rgba(255,255,255,0.08);border-radius:16px;}
+  .adg-reward-title{font-size:16px;font-weight:800;color:#fff;
+    text-align:right;margin-bottom:8px;}
+  .adg-reward-desc{font-size:13px;color:rgba(255,255,255,0.7);
+    line-height:1.7;text-align:right;}
+  .adg-reward-brand{display:flex;align-items:center;gap:10px;
     margin-top:14px;padding-top:14px;
-    border-top:1px solid rgba(255,255,255,0.08);
-  }
-  .adg-brand-icon{
-    width:34px;height:34px;border-radius:10px;
+    border-top:1px solid rgba(255,255,255,0.08);}
+  .adg-brand-icon{width:34px;height:34px;border-radius:10px;
     background:linear-gradient(135deg,#4f9bff,#2563eb);
     display:flex;align-items:center;justify-content:center;
-    font-size:16px;font-weight:900;color:#fff;flex-shrink:0;
-  }
-  .adg-brand-name{
-    font-size:14px;font-weight:700;color:#4f9bff;
-  }
+    font-size:16px;font-weight:900;color:#fff;flex-shrink:0;}
+  .adg-brand-name{font-size:14px;font-weight:700;color:#4f9bff;}
 
-  /* Bottom timer */
-  .adg-bottombar{
-    position:fixed;bottom:0;left:0;right:0;
-    background:#0a0e1a;
-    padding:14px 16px 20px;
+  .adg-bottombar{position:fixed;bottom:0;left:0;right:0;
+    background:#0a0e1a;padding:14px 16px 20px;
     border-top:1px solid rgba(255,255,255,0.05);
-    display:flex;flex-direction:column;align-items:center;gap:8px;
-    z-index:5;
-  }
-  .adg-timer-badge{
-    display:inline-flex;align-items:center;justify-content:center;
-    padding:8px 22px;
-    background:rgba(255,255,255,0.08);
+    display:flex;flex-direction:column;align-items:center;gap:8px;z-index:5;}
+  .adg-timer-badge{display:inline-flex;align-items:center;justify-content:center;
+    padding:8px 22px;background:rgba(255,255,255,0.08);
     border-radius:999px;
     font-family:"SF Mono","Courier New",monospace;
     font-size:15px;font-weight:900;color:#fff;
-    letter-spacing:1.5px;
-    min-width:85px;
-    transition:all 0.3s;
-  }
+    letter-spacing:1.5px;min-width:85px;transition:all 0.3s;}
   .adg-timer-badge.warn{color:#ffaa00;background:rgba(255,170,0,0.15);}
   .adg-timer-badge.ready{color:#10b981;background:rgba(16,185,129,0.15);}
-  .adg-advert{
-    font-size:11px;color:rgba(255,255,255,0.4);
-    text-align:center;font-weight:600;
-  }
+  .adg-advert{font-size:11px;color:rgba(255,255,255,0.4);
+    text-align:center;font-weight:600;}
   .adg-advert b{color:rgba(255,255,255,0.65);font-weight:700;}
 
   /* Tasks */
@@ -663,8 +570,6 @@
     border:1px solid rgba(59,130,246,0.3);border-radius:14px;margin-bottom:14px;}
   .notice-icon{font-size:20px;flex-shrink:0;}
   .notice-text{font-size:12px;color:var(--text-dim);line-height:1.6;}
-
-  .start-btn{width:100%;margin-top:14px;}
 </style>
 </head>
 <body>
@@ -717,9 +622,7 @@
             <div class="card-label">VALID</div>
             <div class="card-expiry-value">12/29</div>
           </div>
-          <div class="card-network">
-            <div class="c1"></div><div class="c2"></div>
-          </div>
+          <div class="card-network"><div class="c1"></div><div class="c2"></div></div>
         </div>
       </div>
     </div>
@@ -796,9 +699,7 @@
             <div class="card-label">VALID</div>
             <div class="card-expiry-value">12/29</div>
           </div>
-          <div class="card-network">
-            <div class="c1"></div><div class="c2"></div>
-          </div>
+          <div class="card-network"><div class="c1"></div><div class="c2"></div></div>
         </div>
       </div>
     </div>
@@ -917,7 +818,6 @@
   </div>
 </div>
 
-<!-- AD OVERLAY -->
 <div class="adg-overlay" id="adOverlay">
   <div class="adg-topbar">
     <button class="adg-close" onclick="closeAdOverlay()">✕</button>
@@ -1304,7 +1204,9 @@ async function loadAds(){
   list.innerHTML = ads.map(a => {
     const firstMedia = a.media && a.media.length > 0 ? a.media[0] : null;
     const iconHTML = firstMedia
-      ? (firstMedia.type === "video" ? "🎬" : `<img src="${firstMedia.url}" alt="" onerror="this.parentElement.innerHTML='🖼️'" />`)
+      ? (firstMedia.type === "video"
+          ? "🎬"
+          : `<img src="${firstMedia.url}" alt="" onerror="this.parentElement.innerHTML='🖼️'" />`)
       : "🔗";
     return `
     <div class="ad-row" onclick="watchAd(${a.id})">
@@ -1326,26 +1228,38 @@ function showNextAd(){
 }
 
 // ═══════════════════════════════════════════════════════
-// AD WATCH — fullscreen adsgram style
+// AD WATCH — عرض متتالي لجميع الوسائط
 // ═══════════════════════════════════════════════════════
 async function watchAd(adId){
   const ad = ads.find(x => x.id === adId);
   if (!ad) return;
-  if (user.ads_today >= user.daily_limit){ toast(LANGS.limit_reached || "Limit", "error"); return; }
+  if (user.ads_today >= user.daily_limit){
+    toast(LANGS.limit_reached || "Limit", "error");
+    return;
+  }
 
-  const overlay = document.getElementById("adOverlay");
-  const mediaEl = document.getElementById("adgMedia");
-  const titleEl = document.getElementById("adgTitle");
-  const descEl = document.getElementById("adgDesc");
-  const ctaBtn = document.getElementById("adgCtaBtn");
-  const ctaText = document.getElementById("adgCtaText");
-  const ctaIcon = document.getElementById("adgCtaIcon");
-  const progressBar = document.getElementById("adgProgressBar");
-  const timerBadge = document.getElementById("adgTimerBadge");
-  const rewardTitle = document.getElementById("adgRewardTitle");
-  const rewardDesc = document.getElementById("adgRewardDesc");
-  const appName = document.getElementById("adgAppName");
-  const brandName = document.getElementById("adgBrandName");
+  const overlay       = document.getElementById("adOverlay");
+  const mediaEl       = document.getElementById("adgMedia");
+  const titleEl       = document.getElementById("adgTitle");
+  const descEl        = document.getElementById("adgDesc");
+  const ctaBtn        = document.getElementById("adgCtaBtn");
+  const ctaText       = document.getElementById("adgCtaText");
+  const ctaIcon       = document.getElementById("adgCtaIcon");
+  const progressBar   = document.getElementById("adgProgressBar");
+  const timerBadge    = document.getElementById("adgTimerBadge");
+  const rewardTitle   = document.getElementById("adgRewardTitle");
+  const rewardDesc    = document.getElementById("adgRewardDesc");
+  const appName       = document.getElementById("adgAppName");
+  const brandName     = document.getElementById("adgBrandName");
+
+  const mediaList = (ad.media && ad.media.length > 0)
+    ? ad.media
+    : [{ type: "placeholder", url: "" }];
+
+  const mediaCount    = mediaList.length;
+  const totalDuration = ad.duration || 15;
+  const perMedia      = Math.max(3, Math.ceil(totalDuration / mediaCount));
+  const realTotal     = perMedia * mediaCount;
 
   adPlayState = {
     adId: ad.id,
@@ -1354,8 +1268,12 @@ async function watchAd(adId){
     clickedAt: 0,
     completed: false,
     timerInterval: null,
+    mediaInterval: null,
     minViewTime: 5,
-    totalDuration: ad.duration || 15,
+    realTotal: realTotal,
+    perMedia: perMedia,
+    mediaList: mediaList,
+    currentIndex: 0,
   };
 
   appName.textContent = ad.title || "AdVault Pro";
@@ -1373,60 +1291,81 @@ async function watchAd(adId){
   ctaBtn.onclick = (e) => openAdLink(e);
   ctaBtn.style.pointerEvents = "auto";
 
-  mediaEl.innerHTML = "";
-  if (ad.media && ad.media.length > 0){
-    const m = ad.media[0];
-    if (m.type === "video"){
-      mediaEl.innerHTML = `<video src="${m.url}" autoplay muted playsinline controls preload="auto"></video>`;
-    } else {
-      mediaEl.innerHTML = `<img src="${m.url}" alt="" loading="eager"
-        onerror="this.parentElement.innerHTML='<div style=\\'padding:60px 20px;text-align:center;font-size:80px;\\'>🖼️</div>'"/>`;
-    }
-    if (ad.media.length > 1){
-      mediaEl.innerHTML += `<div class="adg-media-badge">🖼️ ${ad.media.length}</div>`;
-    }
-  } else {
-    mediaEl.innerHTML = `<div style="padding:80px 20px;text-align:center;font-size:100px;background:linear-gradient(135deg,#0d1424,#0a0e1a);">🔗</div>`;
-  }
-
-  const segCount = Math.max(1, (ad.media && ad.media.length) || 1);
   progressBar.innerHTML = "";
-  for (let i = 0; i < segCount; i++){
+  for (let i = 0; i < mediaCount; i++){
     const seg = document.createElement("div");
     seg.className = "adg-seg" + (i === 0 ? " active" : "");
     seg.innerHTML = `<div class="adg-seg-fill"></div>`;
     progressBar.appendChild(seg);
   }
 
+  function showMedia(index){
+    if (index >= mediaList.length) index = mediaList.length - 1;
+    adPlayState.currentIndex = index;
+    const m = mediaList[index];
+    let html = "";
+
+    if (m.type === "video"){
+      html = `<video src="${m.url}" autoplay muted playsinline controls preload="auto" id="adVideo-${index}"></video>`;
+    } else if (m.type === "image"){
+      html = `<img src="${m.url}" alt="" loading="eager"
+        onerror="this.parentElement.innerHTML='<div style=\\'padding:80px 20px;text-align:center;font-size:100px;\\'>🖼️</div>'"/>`;
+    } else {
+      html = `<div style="padding:80px 20px;text-align:center;font-size:100px;background:linear-gradient(135deg,#0d1424,#0a0e1a);">🔗</div>`;
+    }
+
+    if (mediaCount > 1){
+      html += `<div class="adg-media-badge">${index + 1}/${mediaCount}</div>`;
+    }
+
+    mediaEl.innerHTML = html;
+    mediaEl.classList.remove("vertical");
+  }
+
+  showMedia(0);
   overlay.classList.add("active");
 
-  const totalDuration = ad.duration || 15;
   let elapsed = 0;
-  const segDuration = totalDuration / segCount;
-  timerBadge.textContent = "00:" + String(totalDuration).padStart(2, "0");
+  timerBadge.textContent = "00:" + String(realTotal).padStart(2, "0");
   timerBadge.classList.remove("warn", "ready");
 
   if (adPlayState.timerInterval) clearInterval(adPlayState.timerInterval);
+  if (adPlayState.mediaInterval) clearInterval(adPlayState.mediaInterval);
+
+  if (mediaCount > 1){
+    let nextSwitch = perMedia;
+    adPlayState.mediaInterval = setInterval(() => {
+      if (adPlayState.currentIndex < mediaCount - 1 && elapsed >= nextSwitch){
+        showMedia(adPlayState.currentIndex + 1);
+        nextSwitch += perMedia;
+      }
+    }, 1000);
+  }
 
   adPlayState.timerInterval = setInterval(() => {
     elapsed++;
-    const remaining = Math.max(0, totalDuration - elapsed);
+
+    const remaining = Math.max(0, realTotal - elapsed);
     timerBadge.textContent = "00:" + String(remaining).padStart(2, "0");
 
     if (remaining <= 5 && remaining > 0) timerBadge.classList.add("warn");
 
     const segs = progressBar.querySelectorAll(".adg-seg");
     segs.forEach((s, i) => {
-      const start = i * segDuration;
-      const pct = Math.min(100, Math.max(0, ((elapsed - start) / segDuration) * 100));
+      const start = i * perMedia;
+      const pct = Math.min(100, Math.max(0, ((elapsed - start) / perMedia) * 100));
       s.querySelector(".adg-seg-fill").style.width = pct + "%";
-      if (pct >= 100) { s.classList.remove("active"); s.classList.add("done"); }
-      else if (pct > 0) { s.classList.add("active"); }
+      if (pct >= 100){ s.classList.remove("active"); s.classList.add("done"); }
+      else if (pct > 0){ s.classList.add("active"); }
     });
 
     if (remaining <= 0){
       clearInterval(adPlayState.timerInterval);
       adPlayState.timerInterval = null;
+      if (adPlayState.mediaInterval){
+        clearInterval(adPlayState.mediaInterval);
+        adPlayState.mediaInterval = null;
+      }
 
       const clicked = adPlayState.clicked;
       const timeSinceClick = (Date.now() - adPlayState.clickedAt) / 1000;
@@ -1494,6 +1433,10 @@ function closeAdOverlay(force){
     clearInterval(adPlayState.timerInterval);
     adPlayState.timerInterval = null;
   }
+  if (adPlayState && adPlayState.mediaInterval){
+    clearInterval(adPlayState.mediaInterval);
+    adPlayState.mediaInterval = null;
+  }
   const wasCompleted = adPlayState && adPlayState.completed;
   document.getElementById("adOverlay").classList.remove("active");
   document.getElementById("adgMedia").innerHTML = "";
@@ -1508,6 +1451,10 @@ async function completeAd(adId){
   if (adPlayState && adPlayState.timerInterval){
     clearInterval(adPlayState.timerInterval);
     adPlayState.timerInterval = null;
+  }
+  if (adPlayState && adPlayState.mediaInterval){
+    clearInterval(adPlayState.mediaInterval);
+    adPlayState.mediaInterval = null;
   }
   document.getElementById("adOverlay").classList.remove("active");
   document.getElementById("adgMedia").innerHTML = "";
@@ -1586,7 +1533,7 @@ function renderTasks(){
   }).join("");
 
   tasks.forEach(task => {
-    if (task.state === "waiting" && task.remaining > 0) {
+    if (task.state === "waiting" && task.remaining > 0){
       startTaskCountdown(task.id, task.remaining);
     }
   });
@@ -1686,9 +1633,6 @@ async function claimDaily(){
   } catch(e){ toast(e.message,"error"); }
 }
 
-// ═══════════════════════════════════════════════════════
-// LEADERBOARD
-// ═══════════════════════════════════════════════════════
 async function loadLeaderboard(){
   const list = await api("/api/leaderboard");
   const el = document.getElementById("leaderboardList");
@@ -1713,9 +1657,6 @@ async function loadLeaderboard(){
   }).join("");
 }
 
-// ═══════════════════════════════════════════════════════
-// WALLET
-// ═══════════════════════════════════════════════════════
 async function loadCountries(){
   countries = await api("/api/countries");
   const grid = document.getElementById("countryGrid");
@@ -1884,9 +1825,6 @@ async function sendContact(){
   } catch(e){ toast(e.message,"error"); }
 }
 
-// ═══════════════════════════════════════════════════════
-// TABS
-// ═══════════════════════════════════════════════════════
 function switchTab(tab){
   if (tab === currentTab) return;
   currentTab = tab;
