@@ -6,7 +6,7 @@ from typing import Optional
 
 import httpx
 from fastapi import FastAPI, Request, HTTPException, Header, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, Response, StreamingResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -57,6 +57,24 @@ def rate_ok(user_id, max_hits=10, window=10):
         return False
     q.append(now)
     return True
+
+# ═══════════════════════════════════════════════════════════════════════
+# 💾 كاش روابط ملفات تيليجرام (لتسريع التحميل 10x)
+# ═══════════════════════════════════════════════════════════════════════
+FILE_URL_CACHE = {}   # {file_id: (url, expires_at)}
+FILE_URL_TTL   = 1500 # 25 دقيقة — روابط تيليجرام تنتهي بعد ~ساعة
+
+async def get_cached_file_url(file_id):
+    if not file_id:
+        return ""
+    now = time.time()
+    cached = FILE_URL_CACHE.get(file_id)
+    if cached and cached[1] > now:
+        return cached[0]
+    url = await fetch_telegram_file(file_id)
+    if url:
+        FILE_URL_CACHE[file_id] = (url, now + FILE_URL_TTL)
+    return url
 
 # ═══════════════════════════════════════════════════════════════════════
 # 🌐 اللغات
@@ -530,7 +548,7 @@ async def external_heartbeat():
 # ═══════════════════════════════════════════════════════════════════════
 # 🚀 FastAPI
 # ═══════════════════════════════════════════════════════════════════════
-app = FastAPI(title="AdVault Pro VIP", version="10.1.0")
+app = FastAPI(title="AdVault Pro VIP", version="11.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -624,7 +642,7 @@ async def api_set_lang(req: Request):
     return {"ok": True, "lang": lang_code}
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📢 الإعلانات — الإصلاح الرئيسي هنا
+# 📢 الإعلانات
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/ads")
 async def api_ads(user_id: int):
@@ -663,7 +681,6 @@ async def api_ads(user_id: int):
         if not media and a["image_file_id"]:
             media.append({"type": "image", "file_id": a["image_file_id"]})
 
-        # ✅ الإصلاح الرئيسي — توحيد النوع
         media_out = []
         for i, m in enumerate(media):
             raw_type = m.get("type") or "image"
@@ -696,7 +713,11 @@ async def api_ads(user_id: int):
 
 
 @app.get("/api/ad-media/{ad_id}/{index}")
-async def api_ad_media(ad_id: int, index: int, range: str = Header(None)):
+async def api_ad_media(ad_id: int, index: int):
+    """
+    ✅ إعادة توجيه 302 مباشرة إلى تيليجرام CDN
+    المتصفح يحمّل الفيديو/الصورة من تيليجرام مباشرة = سرعة 10x
+    """
     with db() as conn:
         row = conn.execute(
             "SELECT video_file_id, image_file_id, media_json FROM ads WHERE id=?",
@@ -722,37 +743,15 @@ async def api_ad_media(ad_id: int, index: int, range: str = Header(None)):
     if not file_id:
         raise HTTPException(404, "لا file_id")
 
-    file_url = await fetch_telegram_file(file_id)
+    file_url = await get_cached_file_url(file_id)
     if not file_url:
         raise HTTPException(404, "تعذر الجلب")
 
-    # ✅ توحيد النوع حتى هنا
-    norm_type = normalize_media_type(item.get("type"))
-    media_type = "video/mp4" if norm_type == "video" else "image/jpeg"
-
-    async with httpx.AsyncClient(timeout=180, follow_redirects=True) as c:
-        headers = {}
-        if range:
-            headers["Range"] = range
-        resp = await c.get(file_url, headers=headers)
-        if resp.status_code not in (200, 206):
-            raise HTTPException(resp.status_code, f"خطأ {resp.status_code}")
-
-        if media_type == "video/mp4":
-            return StreamingResponse(
-                resp.aiter_bytes(),
-                status_code=resp.status_code,
-                media_type=media_type,
-                headers={
-                    "Content-Range": resp.headers.get("Content-Range", ""),
-                    "Accept-Ranges": "bytes",
-                    "Content-Length": resp.headers.get("Content-Length", ""),
-                    "Cache-Control": "public, max-age=3600",
-                })
-        return Response(
-            content=resp.content,
-            media_type=media_type,
-            headers={"Cache-Control": "public, max-age=3600"})
+    return RedirectResponse(
+        url=file_url,
+        status_code=302,
+        headers={"Cache-Control": "public, max-age=1500"},
+    )
 
 
 @app.post("/api/ads/{ad_id}/watch")
@@ -1209,7 +1208,6 @@ async def adm_upload_media(
         except Exception:
             pass
 
-        # ✅ الإصلاح الرئيسي: توحيد النوع "photo" → "image"
         norm = "video" if media_type == "video" else "image"
         return {"ok": True, "file_id": file_id, "type": norm}
     finally:
@@ -1228,7 +1226,6 @@ async def adm_create_ad(req: Request):
     if not isinstance(media, list):
         media = []
 
-    # ✅ توحيد النوع قبل الحفظ
     clean_media = []
     for m in media:
         if not isinstance(m, dict):
@@ -1294,7 +1291,6 @@ async def adm_ads_list(req: Request):
             raw_media = json.loads(d.get("media_json") or "[]")
         except Exception:
             raw_media = []
-        # توحيد للعرض في لوحة التحكم
         clean = []
         for m in raw_media:
             clean.append({
