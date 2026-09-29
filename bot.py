@@ -1,4 +1,5 @@
 
+
 import os, hmac, json, time, sqlite3, hashlib, asyncio, re, shutil, tempfile
 from urllib.parse import parse_qsl
 from datetime import datetime, timezone, timedelta
@@ -21,7 +22,7 @@ from telegram.ext import (
 from telegram.error import Conflict, TelegramError
 
 # ═══════════════════════════════════════════════════════════════════════
-# ⚙️ الإعدادات
+# ⚙️ الإعدادات العامة
 # ═══════════════════════════════════════════════════════════════════════
 BOT_TOKEN      = os.getenv("BOT_TOKEN", "8909959176:AAHtOv4alGndeFTY0_Juqf5hpLsQV5z-hlc")
 WEBAPP_URL     = os.getenv("WEBAPP_URL", "https://xeonbots.onrender.com/").rstrip("/") + "/"
@@ -112,6 +113,7 @@ LANGS = {
         "opening": "جارٍ الفتح...",
         "link_opened": "تم فتح الرابط ✓",
         "return_confirm": "عد واضغط تأكيد الدخول",
+        "open_btn": "فتح",
     },
     "en": {
         "dir": "ltr", "name": "English",
@@ -159,6 +161,7 @@ LANGS = {
         "opening": "Opening...",
         "link_opened": "Link Opened ✓",
         "return_confirm": "Return & press Confirm Entry",
+        "open_btn": "Open",
     },
 }
 
@@ -299,7 +302,6 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_user_ads ON user_ads(user_id, ad_id);
         """)
 
-        # Migrations
         for tbl, col, typ in [
             ("ads", "media_json", "TEXT"),
             ("ads", "button_text", "TEXT"),
@@ -629,7 +631,7 @@ async def api_set_lang(req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📢 الإعلانات — إخفاء دائم
+# 📢 الإعلانات
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/ads")
 async def api_ads(user_id: int):
@@ -713,27 +715,39 @@ async def api_ad_media(ad_id: int, index: int, range: str = Header(None)):
         raise HTTPException(404, "لا وسائط")
 
     item = media_list[index]
-    file_url = await fetch_telegram_file(item.get("file_id", ""))
+    file_id = item.get("file_id", "")
+    if not file_id:
+        raise HTTPException(404, "لا file_id")
+
+    file_url = await fetch_telegram_file(file_id)
     if not file_url:
-        raise HTTPException(404, "تعذر الجلب")
+        raise HTTPException(404, "تعذر الجلب من تيليجرام")
+
     media_type = "video/mp4" if item.get("type") == "video" else "image/jpeg"
 
-    async with httpx.AsyncClient(timeout=120) as c:
+    async with httpx.AsyncClient(timeout=120, follow_redirects=True) as c:
         headers = {}
         if range:
             headers["Range"] = range
         resp = await c.get(file_url, headers=headers)
         if resp.status_code not in (200, 206):
-            raise HTTPException(resp.status_code, "خطأ")
+            raise HTTPException(resp.status_code, f"خطأ: {resp.status_code}")
+
         if media_type == "video/mp4":
             return StreamingResponse(
-                resp.aiter_bytes(), status_code=resp.status_code, media_type=media_type,
+                resp.aiter_bytes(),
+                status_code=resp.status_code,
+                media_type=media_type,
                 headers={
                     "Content-Range": resp.headers.get("Content-Range", ""),
                     "Accept-Ranges": "bytes",
                     "Content-Length": resp.headers.get("Content-Length", ""),
+                    "Cache-Control": "public, max-age=3600",
                 })
-        return Response(content=resp.content, media_type=media_type)
+        return Response(
+            content=resp.content,
+            media_type=media_type,
+            headers={"Cache-Control": "public, max-age=3600"})
 
 
 @app.post("/api/ads/{ad_id}/watch")
@@ -772,7 +786,7 @@ async def api_watch_ad(ad_id: int, req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📋 المهام — نظام 4 مراحل
+# 📋 المهام — نظام 4 مراحل محمي
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/tasks")
 async def api_tasks(user_id: int):
@@ -821,13 +835,11 @@ async def api_tasks(user_id: int):
             out.append(item)
             continue
 
-        # المستخدم ضغط "انضم الآن" فقط
         if c["clicked_at"] and not c.get("opened_at"):
             item["state"] = "opened"
             out.append(item)
             continue
 
-        # تم تأكيد الدخول — انتظار
         if c.get("opened_at") and not c.get("confirmed_at"):
             try:
                 opened_at = datetime.fromisoformat(c["opened_at"])
@@ -853,7 +865,6 @@ async def api_tasks(user_id: int):
 
 @app.post("/api/tasks/{task_id}/start")
 async def api_task_start(task_id: int, req: Request):
-    """المستخدم ضغط زر انضم — يفتح الرابط ويسجل الوقت"""
     body = await req.json()
     user_id = int(body.get("user_id", 0))
     with db() as conn:
@@ -884,16 +895,11 @@ async def api_task_start(task_id: int, req: Request):
             except sqlite3.OperationalError:
                 pass
 
-    return {
-        "ok": True,
-        "state": "opened",
-        "message": "عد للتطبيق واضغط تأكيد الدخول",
-    }
+    return {"ok": True, "state": "opened"}
 
 
 @app.post("/api/tasks/{task_id}/confirm")
 async def api_task_confirm(task_id: int, req: Request):
-    """المستخدم أكد أنه دخل الرابط"""
     body = await req.json()
     user_id = int(body.get("user_id", 0))
     min_delay = DEF_TASK_CONFIRM_DELAY
@@ -930,11 +936,7 @@ async def api_task_confirm(task_id: int, req: Request):
             (now_iso, user_id, task_id))
 
     wait_seconds = int(get_setting("task_wait", "10"))
-    return {
-        "ok": True,
-        "state": "waiting",
-        "wait_seconds": wait_seconds,
-    }
+    return {"ok": True, "state": "waiting", "wait_seconds": wait_seconds}
 
 
 @app.post("/api/tasks/{task_id}/claim")
