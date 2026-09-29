@@ -29,7 +29,6 @@
   @keyframes floatParticle{0%{transform:translateY(100vh) scale(0);opacity:0;}10%{opacity:0.6;}90%{opacity:0.6;}100%{transform:translateY(-10vh) scale(1.5);opacity:0;}}
   #app{position:relative;z-index:2;padding:14px 14px 110px;max-width:480px;margin:0 auto;min-height:100vh;}
 
-  /* Header */
   .header{display:flex;align-items:center;gap:12px;padding:14px 16px;
     background:linear-gradient(135deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02));
     backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
@@ -61,12 +60,12 @@
   @keyframes hbPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.4);opacity:0.6;}}
 
   /* ═══════════ BANK CARD ═══════════ */
-  .bank-card-wrap{width:100%;margin-bottom:18px;perspective:1200px;}
+  .bank-card-wrap{width:100%;margin-bottom:14px;}
   .bank-card{
     position:relative;width:100%;aspect-ratio:1.586 / 1;
-    max-height:240px;border-radius:20px;padding:5% 6%;
+    max-height:230px;border-radius:18px;padding:5% 6%;
     background:linear-gradient(135deg,#0b0b22 0%,#14143a 25%,#0a0a1e 50%,#1a1a44 75%,#0b0b22 100%);
-    box-shadow:0 30px 80px rgba(0,0,0,0.8),0 0 0 1px rgba(255,215,0,0.35),
+    box-shadow:0 25px 70px rgba(0,0,0,0.8),0 0 0 1px rgba(255,215,0,0.35),
       inset 0 1px 0 rgba(255,255,255,0.15),inset 0 -1px 0 rgba(0,0,0,0.5);
     overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;isolation:isolate;
   }
@@ -83,58 +82,66 @@
       rgba(255,215,0,0.18) 50%,rgba(255,255,255,0.1) 55%,transparent 70%);
     background-size:250% 250%;animation:holo 6s linear infinite;mix-blend-mode:overlay;}
   @keyframes holo{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
   .card-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:3;}
   .card-brand{font-size:11px;font-weight:900;letter-spacing:2.5px;color:var(--gold);
     text-shadow:0 0 24px rgba(255,215,0,0.6),0 2px 4px rgba(0,0,0,0.5);
     display:flex;align-items:center;gap:5px;line-height:1;}
   .card-brand .dot{display:inline-block;width:6px;height:6px;border-radius:50%;
     background:var(--gold);box-shadow:0 0 12px var(--gold);}
-  .card-contactless{font-size:18px;color:var(--gold);transform:rotate(90deg);opacity:0.85;
-    filter:drop-shadow(0 0 8px rgba(255,215,0,0.6));letter-spacing:-2px;}
-  .card-chip{width:44px;height:34px;border-radius:7px;position:relative;margin-top:2%;z-index:3;
+  .card-menu{display:flex;flex-direction:column;gap:3px;cursor:pointer;padding:4px;}
+  .card-menu span{display:block;width:16px;height:2px;background:rgba(255,215,0,0.8);
+    border-radius:2px;box-shadow:0 0 6px rgba(255,215,0,0.5);}
+  .card-contactless{font-size:16px;color:var(--gold);transform:rotate(90deg);opacity:0.85;
+    filter:drop-shadow(0 0 8px rgba(255,215,0,0.6));letter-spacing:-2px;
+    position:absolute;top:0;inset-inline-end:30px;}
+
+  .card-chip{width:40px;height:30px;border-radius:6px;position:relative;margin-top:2%;z-index:3;
     background:linear-gradient(135deg,#f7e079 0%,#c9a227 25%,#8b6914 50%,#c9a227 75%,#f7e079 100%);
     box-shadow:inset 0 0 8px rgba(0,0,0,0.6),inset 0 1px 2px rgba(255,255,255,0.7),0 2px 6px rgba(0,0,0,0.5);}
   .card-chip::before{content:"";position:absolute;inset:5px;border-radius:4px;border:1px solid rgba(0,0,0,0.35);
     background:linear-gradient(90deg,transparent 46%,rgba(0,0,0,0.4) 46%,rgba(0,0,0,0.4) 54%,transparent 54%),
       linear-gradient(0deg,transparent 46%,rgba(0,0,0,0.4) 46%,rgba(0,0,0,0.4) 54%,transparent 54%);}
+
   .card-number{font-family:"SF Mono","Courier New",monospace;
-    font-size:clamp(13px,3.3vw,18px);letter-spacing:2px;
+    font-size:clamp(12px,3vw,16px);letter-spacing:2px;
     color:rgba(255,245,200,0.95);
     text-shadow:0 1px 0 rgba(0,0,0,0.9),0 -1px 0 rgba(255,255,255,0.15),0 0 15px rgba(255,215,0,0.35);
-    font-weight:700;direction:ltr;text-align:left;padding:2% 0;z-index:3;position:relative;line-height:1.1;}
-  .card-bottom{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:3;gap:8px;}
-  .card-holder-block{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
-  .card-label{font-size:7.5px;color:var(--text-dim);letter-spacing:2.5px;text-transform:uppercase;font-weight:800;}
-  .card-holder-name{font-size:11px;color:#fff;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
-    text-shadow:0 1px 2px rgba(0,0,0,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .card-expiry{display:flex;flex-direction:column;gap:2px;align-items:center;}
-  .card-expiry-value{font-size:11px;color:#fff;font-weight:800;letter-spacing:1px;
-    font-family:"SF Mono",monospace;text-shadow:0 1px 2px rgba(0,0,0,0.7);}
-  .card-network{display:flex;align-items:center;}
-  .card-network .c1,.card-network .c2{width:22px;height:22px;border-radius:50%;}
-  .card-network .c1{background:radial-gradient(circle at 30% 30%,#ff6b6b,#c92a2a);}
-  .card-network .c2{margin-left:-9px;background:radial-gradient(circle at 30% 30%,#ffd93d,#f59f00);}
+    font-weight:700;direction:ltr;text-align:left;padding:1% 0;z-index:3;position:relative;line-height:1.1;}
 
-  /* Balance على يسار الثلاثة خطوط */
+  /* Balance على يسار البطاقة تحت الثلاثة خطوط */
   .card-balance{
     position:absolute;
-    bottom:6%;
+    bottom:22%;
     inset-inline-start:6%;
     z-index:4;
     text-align:start;
   }
   .card-balance-label{
-    font-size:8px;letter-spacing:2.5px;color:rgba(255,255,255,0.5);
-    text-transform:uppercase;font-weight:800;margin-bottom:2px;
+    font-size:7px;letter-spacing:2.5px;color:rgba(255,255,255,0.5);
+    text-transform:uppercase;font-weight:800;margin-bottom:1px;
   }
   .card-balance-amount{
-    font-size:clamp(18px,5vw,26px);font-weight:900;line-height:1;
+    font-size:clamp(16px,4.5vw,22px);font-weight:900;line-height:1;
     background:linear-gradient(180deg,#fff9d6 0%,var(--gold) 45%,var(--gold-3) 100%);
     -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
     text-shadow:0 0 40px rgba(255,215,0,0.5);
     letter-spacing:-1px;font-variant-numeric:tabular-nums;
     filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));
   }
+
+  .card-bottom{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:3;gap:8px;}
+  .card-holder-block{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
+  .card-label{font-size:7px;color:var(--text-dim);letter-spacing:2.5px;text-transform:uppercase;font-weight:800;}
+  .card-holder-name{font-size:10px;color:#fff;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;
+    text-shadow:0 1px 2px rgba(0,0,0,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-expiry{display:flex;flex-direction:column;gap:2px;align-items:center;}
+  .card-expiry-value{font-size:10px;color:#fff;font-weight:800;letter-spacing:1px;
+    font-family:"SF Mono",monospace;text-shadow:0 1px 2px rgba(0,0,0,0.7);}
+  .card-network{display:flex;align-items:center;}
+  .card-network .c1,.card-network .c2{width:20px;height:20px;border-radius:50%;}
+  .card-network .c1{background:radial-gradient(circle at 30% 30%,#ff6b6b,#c92a2a);}
+  .card-network .c2{margin-left:-8px;background:radial-gradient(circle at 30% 30%,#ffd93d,#f59f00);}
 
   .card-stats-row{display:flex;gap:8px;margin-bottom:16px;}
   .card-stat{flex:1;padding:12px 8px;text-align:center;
@@ -170,7 +177,7 @@
   .section-title{font-size:15px;font-weight:800;margin:22px 0 12px;display:flex;align-items:center;gap:8px;}
   .section-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border-2),transparent);margin-inline-start:8px;}
 
-  /* Ad Row */
+  /* Ad Row — البطاقة التي تفتح الإعلان مباشرة */
   .ad-row{display:flex;align-items:center;gap:12px;padding:14px;
     background:linear-gradient(160deg,var(--glass-2),var(--glass));
     border:1px solid var(--border);border-radius:18px;margin-bottom:10px;
@@ -190,8 +197,7 @@
   .adg-overlay{
     position:fixed;inset:0;z-index:9998;
     background:#0a0e1a;
-    display:none;flex-direction:column;
-    overflow:hidden;
+    display:none;flex-direction:column;overflow:hidden;
   }
   .adg-overlay.active{display:flex;animation:adgFade 0.3s ease;}
   @keyframes adgFade{from{opacity:0;}to{opacity:1;}}
@@ -206,7 +212,8 @@
     display:flex;align-items:center;justify-content:center;
     font-size:13px;font-weight:900;color:#fff;flex-shrink:0;
   }
-  .adg-app-name{font-size:14px;font-weight:700;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .adg-app-name{font-size:14px;font-weight:700;color:#fff;flex:1;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .adg-close{
     width:32px;height:32px;border-radius:50%;
     background:rgba(255,255,255,0.08);
@@ -245,6 +252,7 @@
     padding-bottom:110px;
   }
 
+  /* Media — صورة أو فيديو */
   .adg-media{
     width:100%;background:#000;
     position:relative;overflow:hidden;
@@ -253,12 +261,12 @@
   .adg-media img,
   .adg-media video{
     width:100%;height:auto;display:block;
-    max-height:60vh;object-fit:cover;
+    max-height:55vh;object-fit:cover;
     background:#000;
   }
   .adg-media.vertical img,
   .adg-media.vertical video{
-    max-height:70vh;object-fit:contain;
+    max-height:65vh;object-fit:contain;
   }
   .adg-media-badge{
     position:absolute;top:12px;right:12px;
@@ -286,6 +294,7 @@
     text-align:right;
   }
 
+  /* CTA Button */
   .adg-cta-btn{
     display:flex;align-items:center;justify-content:space-between;
     width:100%;padding:16px 20px;
@@ -310,6 +319,7 @@
   }
   .adg-cta-icon{font-size:22px;}
 
+  /* Reward Box */
   .adg-reward-box{
     margin:0 16px 16px;
     padding:16px;
@@ -340,6 +350,7 @@
     font-size:14px;font-weight:700;color:#4f9bff;
   }
 
+  /* Bottom timer */
   .adg-bottombar{
     position:fixed;bottom:0;left:0;right:0;
     background:#0a0e1a;
@@ -386,14 +397,18 @@
     display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;}
   .task-reward.open{color:#fff;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;box-shadow:0 4px 16px rgba(59,130,246,0.4);}
   .task-reward.open:active{transform:scale(0.95);}
-  .task-reward.confirm{color:#fff;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;box-shadow:0 4px 16px rgba(59,130,246,0.5);animation:confirmPulse 1.5s ease-in-out infinite;}
+  .task-reward.confirm{color:#fff;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;
+    box-shadow:0 4px 16px rgba(59,130,246,0.5);animation:confirmPulse 1.5s ease-in-out infinite;}
   @keyframes confirmPulse{0%,100%{box-shadow:0 4px 16px rgba(59,130,246,0.5);}50%{box-shadow:0 4px 24px rgba(59,130,246,0.9);}}
   .task-reward.confirm:active{transform:scale(0.95);}
-  .task-reward.waiting{color:var(--gold);background:rgba(255,170,0,0.15);border:1px solid rgba(255,170,0,0.4);cursor:not-allowed;font-variant-numeric:tabular-nums;}
-  .task-reward.ready{color:#000;background:linear-gradient(135deg,var(--gold),var(--gold-2));border:none;box-shadow:0 4px 16px rgba(255,215,0,0.5);animation:readyBtn 1.5s ease-in-out infinite;}
+  .task-reward.waiting{color:var(--gold);background:rgba(255,170,0,0.15);
+    border:1px solid rgba(255,170,0,0.4);cursor:not-allowed;font-variant-numeric:tabular-nums;}
+  .task-reward.ready{color:#000;background:linear-gradient(135deg,var(--gold),var(--gold-2));
+    border:none;box-shadow:0 4px 16px rgba(255,215,0,0.5);animation:readyBtn 1.5s ease-in-out infinite;}
   @keyframes readyBtn{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
   .task-reward.ready:active{transform:scale(0.95);}
-  .task-reward.done{color:var(--green);background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.35);cursor:default;}
+  .task-reward.done{color:var(--green);background:rgba(0,230,118,0.15);
+    border:1px solid rgba(0,230,118,0.35);cursor:default;}
 
   .daily-card{padding:20px;display:flex;align-items:center;gap:16px;
     background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(59,130,246,0.1));
@@ -648,6 +663,8 @@
     border:1px solid rgba(59,130,246,0.3);border-radius:14px;margin-bottom:14px;}
   .notice-icon{font-size:20px;flex-shrink:0;}
   .notice-text{font-size:12px;color:var(--text-dim);line-height:1.6;}
+
+  .start-btn{width:100%;margin-top:14px;}
 </style>
 </head>
 <body>
@@ -683,13 +700,14 @@
         <div class="card-top">
           <div class="card-brand"><span class="dot"></span>ADVAULT VIP</div>
           <div class="card-contactless">)))</div>
+          <div class="card-menu"><span></span><span></span><span></span></div>
         </div>
         <div class="card-chip"></div>
-        <div class="card-number">•••• •••• •••• <span id="walletIdShort">0000</span></div>
         <div class="card-balance">
           <div class="card-balance-label" id="lblBalanceCard">Available Balance</div>
           <div class="card-balance-amount" id="balance">$0.00</div>
         </div>
+        <div class="card-number">•••• •••• •••• <span id="walletIdShort">0000</span></div>
         <div class="card-bottom">
           <div class="card-holder-block">
             <div class="card-label" id="lblHolderLabel">CARD HOLDER</div>
@@ -730,6 +748,8 @@
     </div>
     <div class="progress-bar"><div class="progress-fill" id="adsProgress" style="width:0%"></div></div>
 
+    <button class="btn btn-gold" id="startBtn" onclick="showNextAd()">🎬 Start Watching</button>
+
     <div class="section-title"><span id="lblAdsTitle">📺 Available Ads</span></div>
     <div id="adsList"></div>
   </div>
@@ -759,13 +779,14 @@
         <div class="card-top">
           <div class="card-brand"><span class="dot"></span>ADVAULT WALLET</div>
           <div class="card-contactless">)))</div>
+          <div class="card-menu"><span></span><span></span><span></span></div>
         </div>
         <div class="card-chip"></div>
-        <div class="card-number">•••• •••• •••• <span id="walletIdShort2">0000</span></div>
         <div class="card-balance">
           <div class="card-balance-label" id="lblBalanceCard2">Balance</div>
           <div class="card-balance-amount" id="walletBalance">$0.00</div>
         </div>
+        <div class="card-number">•••• •••• •••• <span id="walletIdShort2">0000</span></div>
         <div class="card-bottom">
           <div class="card-holder-block">
             <div class="card-label">CARD HOLDER</div>
@@ -956,9 +977,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════
-   JS FULL
-   ═══════════════════════════════════════════════════════════ */
 const tg = window.Telegram?.WebApp;
 if (tg) {
   tg.ready(); tg.expand();
@@ -1114,6 +1132,7 @@ function applyLang(){
   setText("lblHolderLabel", lang === "ar" ? "حامل البطاقة" : "CARD HOLDER");
   setText("lblAdsToday", "👁️ " + (L.ads_today || "Ads Today"));
   setText("lblAdsTitle", "📺 " + (L.home || "Home"));
+  setText("startBtn", "🎬 " + (L.start_ad || "Start"));
   setText("lblDailyTitle", L.daily_reward || "Daily Reward");
   setText("lblTasksTitle", "📋 " + (L.tasks || "Tasks"));
   setText("dailyBtn", L.claim || "Claim");
@@ -1135,7 +1154,7 @@ function applyLang(){
   const n = document.getElementById("noticeText");
   if (n) n.textContent = lang === "ar"
     ? "تتم معالجة طلبات السحب خلال 24 ساعة."
-    : "Withdrawals are processed within 24h.";
+    : "Withdrawals processed within 24h.";
   setText("lblStatBal", L.balance || "Balance");
   setText("lblStatTot", L.total_earned || "Total");
   setText("lblStatAds", L.ads_today || "Ads");
@@ -1158,6 +1177,7 @@ function applyLang(){
   setText("navLb", L.top || "Top");
   setText("navWallet", L.wallet || "Wallet");
   setText("navProfile", L.profile || "Me");
+  setText("adgCtaText", L.open_btn || "فتح");
 
   if (tasks.length && currentTab === "tasks") renderTasks();
 }
@@ -1219,7 +1239,7 @@ function updateUI(u){
       startBtn.disabled = true; startBtn.textContent = "🎉 " + t("limit_reached");
     } else {
       startBtn.disabled = false;
-      if (!currentAd) startBtn.textContent = "🎬 " + (LANGS.start_ad || "Start");
+      startBtn.textContent = "🎬 " + (LANGS.start_ad || "Start");
     }
   }
 
@@ -1281,15 +1301,21 @@ async function loadAds(){
     list.innerHTML = `<div class="empty"><div class="empty-icon">📺</div><div class="empty-text">${LANGS.all_watched || LANGS.no_ads || "No ads"}</div></div>`;
     return;
   }
-  list.innerHTML = ads.map(a => `
+  list.innerHTML = ads.map(a => {
+    const firstMedia = a.media && a.media.length > 0 ? a.media[0] : null;
+    const iconHTML = firstMedia
+      ? (firstMedia.type === "video" ? "🎬" : `<img src="${firstMedia.url}" alt="" onerror="this.parentElement.innerHTML='🖼️'" />`)
+      : "🔗";
+    return `
     <div class="ad-row" onclick="watchAd(${a.id})">
-      <div class="ad-row-icon">${a.media_count>0 ? (a.media[0].type==="video"?"🎬":"🖼️") : "🔗"}</div>
+      <div class="ad-row-icon">${iconHTML}</div>
       <div class="ad-row-body">
         <div class="ad-row-title">${a.title}</div>
         <div class="ad-row-desc">${a.description || ""}</div>
       </div>
       <div class="ad-row-reward">+$${a.reward.toFixed(2)}</div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 function showNextAd(){
@@ -1330,7 +1356,6 @@ async function watchAd(adId){
     timerInterval: null,
     minViewTime: 5,
     totalDuration: ad.duration || 15,
-    remaining: 0,
   };
 
   appName.textContent = ad.title || "AdVault Pro";
@@ -1345,25 +1370,26 @@ async function watchAd(adId){
   ctaText.textContent = lang === "ar" ? "فتح" : "Open";
   ctaIcon.textContent = "👆";
   ctaBtn.classList.remove("claimed");
+  ctaBtn.onclick = (e) => openAdLink(e);
   ctaBtn.style.pointerEvents = "auto";
 
   mediaEl.innerHTML = "";
-  if (ad.media_count > 0){
+  if (ad.media && ad.media.length > 0){
     const m = ad.media[0];
     if (m.type === "video"){
       mediaEl.innerHTML = `<video src="${m.url}" autoplay muted playsinline controls preload="auto"></video>`;
     } else {
-      mediaEl.innerHTML = `<img src="${m.url}" alt="" loading="eager" onerror="this.parentElement.innerHTML='<div style=\\'padding:60px;font-size:80px;text-align:center;\\'>🔗</div>'"/>`;
+      mediaEl.innerHTML = `<img src="${m.url}" alt="" loading="eager"
+        onerror="this.parentElement.innerHTML='<div style=\\'padding:60px 20px;text-align:center;font-size:80px;\\'>🖼️</div>'"/>`;
     }
-    if (ad.media_count > 1){
-      mediaEl.innerHTML += `<div class="adg-media-badge">🖼️ ${ad.media_count}</div>`;
+    if (ad.media.length > 1){
+      mediaEl.innerHTML += `<div class="adg-media-badge">🖼️ ${ad.media.length}</div>`;
     }
   } else {
     mediaEl.innerHTML = `<div style="padding:80px 20px;text-align:center;font-size:100px;background:linear-gradient(135deg,#0d1424,#0a0e1a);">🔗</div>`;
   }
 
-  // progress segments — one per media
-  const segCount = Math.max(1, ad.media_count || 1);
+  const segCount = Math.max(1, (ad.media && ad.media.length) || 1);
   progressBar.innerHTML = "";
   for (let i = 0; i < segCount; i++){
     const seg = document.createElement("div");
@@ -1389,7 +1415,6 @@ async function watchAd(adId){
 
     if (remaining <= 5 && remaining > 0) timerBadge.classList.add("warn");
 
-    // update segment fills
     const segs = progressBar.querySelectorAll(".adg-seg");
     segs.forEach((s, i) => {
       const start = i * segDuration;
@@ -1434,7 +1459,6 @@ function openAdLink(event){
   if (!adPlayState || !adPlayState.ad) return;
 
   const ad = adPlayState.ad;
-  const btn = document.getElementById("adgCtaBtn");
   const ctaText = document.getElementById("adgCtaText");
   const ctaIcon = document.getElementById("adgCtaIcon");
 
