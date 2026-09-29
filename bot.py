@@ -5,7 +5,7 @@ from collections import defaultdict, deque
 from typing import Optional
 
 import httpx
-from fastapi import FastAPI, Request, HTTPException, Header, UploadFile, File, Form, Depends
+from fastapi import FastAPI, Request, HTTPException, Header, UploadFile, File, Form
 from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -274,7 +274,6 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_user_ads ON user_ads(user_id, ad_id);
         """)
 
-        # migrations — آمنة idempotent
         for tbl, col, typ in [
             ("ads", "media_json", "TEXT"),
             ("ads", "button_text", "TEXT"),
@@ -311,6 +310,16 @@ def get_setting(key, default=None):
 def set_setting(key, value):
     with db() as conn:
         conn.execute("INSERT OR REPLACE INTO settings (key,value) VALUES (?,?)", (key, str(value)))
+
+
+def normalize_media_type(raw):
+    """يوحّد أنواع الوسائط: photo → image"""
+    if not raw:
+        return "image"
+    r = str(raw).lower().strip()
+    if r in ("video", "vid", "mp4"):
+        return "video"
+    return "image"
 
 
 def user_to_dict(row):
@@ -405,7 +414,6 @@ def user_rank(uid):
 # 🔐 Telegram InitData Validation
 # ═══════════════════════════════════════════════════════════════════════
 def validate_init_data(init_data):
-    """يرجع dict {user, start_param} أو None عند الفشل"""
     if not init_data or not BOT_TOKEN:
         return None
     try:
@@ -425,7 +433,6 @@ def validate_init_data(init_data):
 
 
 async def get_init_data_from_request(req: Request) -> Optional[str]:
-    """يجلب initData من Header أو Body"""
     hdr = req.headers.get("x-init-data")
     if hdr:
         return hdr
@@ -437,11 +444,6 @@ async def get_init_data_from_request(req: Request) -> Optional[str]:
 
 
 async def verify_admin(req: Request, user_id_fallback: Optional[int] = None) -> int:
-    """
-    يتحقق من صلاحية المشرف.
-    - إن وُجد initData صالح → يستخرج user_id منه ويتأكد أنه في ADMIN_IDS
-    - وإلا → يفشل (لا تراجع أمني)
-    """
     init_data = await get_init_data_from_request(req)
     if init_data:
         parsed = validate_init_data(init_data)
@@ -453,12 +455,10 @@ async def verify_admin(req: Request, user_id_fallback: Optional[int] = None) -> 
         raise HTTPException(401, "initData غير صالح")
     raise HTTPException(401, "initData مطلوب")
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # 📷 Telegram Files
 # ═══════════════════════════════════════════════════════════════════════
 async def fetch_telegram_file(file_id):
-    """يرجع URL مؤقت لملف تيليجرام (يُستخدم للإعلانات streaming)"""
     if not BOT_TOKEN or not file_id:
         return ""
     try:
@@ -474,10 +474,6 @@ async def fetch_telegram_file(file_id):
 
 
 async def fetch_telegram_photo(user_id):
-    """
-    ✅ الإصلاح الجوهري: يرجع (file_id, file_url)
-    file_id دائم ولا ينتهي — هذا ما يجب تخزينه واستخدامه
-    """
     if not BOT_TOKEN:
         return "", ""
     try:
@@ -531,11 +527,10 @@ async def external_heartbeat():
             pass
         await asyncio.sleep(PING_INTERVAL)
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # 🚀 FastAPI
 # ═══════════════════════════════════════════════════════════════════════
-app = FastAPI(title="AdVault Pro VIP", version="10.0.0")
+app = FastAPI(title="AdVault Pro VIP", version="10.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -621,15 +616,15 @@ async def api_rank(user_id: int):
 async def api_set_lang(req: Request):
     body = await req.json()
     user_id = int(body.get("user_id", 0))
-    lang = (body.get("lang") or "ar").strip()
-    if lang not in LANGS:
-        lang = "ar"
+    lang_code = (body.get("lang") or "ar").strip()
+    if lang_code not in LANGS:
+        lang_code = "ar"
     with db() as conn:
-        conn.execute("UPDATE users SET lang=? WHERE user_id=?", (lang, user_id))
-    return {"ok": True, "lang": lang}
+        conn.execute("UPDATE users SET lang=? WHERE user_id=?", (lang_code, user_id))
+    return {"ok": True, "lang": lang_code}
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📢 الإعلانات
+# 📢 الإعلانات — الإصلاح الرئيسي هنا
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/ads")
 async def api_ads(user_id: int):
@@ -668,10 +663,13 @@ async def api_ads(user_id: int):
         if not media and a["image_file_id"]:
             media.append({"type": "image", "file_id": a["image_file_id"]})
 
+        # ✅ الإصلاح الرئيسي — توحيد النوع
         media_out = []
         for i, m in enumerate(media):
+            raw_type = m.get("type") or "image"
+            norm = normalize_media_type(raw_type)
             media_out.append({
-                "type": m.get("type", "image"),
+                "type": norm,
                 "url": f"/api/ad-media/{a['id']}/{i}",
                 "index": i,
             })
@@ -728,9 +726,11 @@ async def api_ad_media(ad_id: int, index: int, range: str = Header(None)):
     if not file_url:
         raise HTTPException(404, "تعذر الجلب")
 
-    media_type = "video/mp4" if item.get("type") == "video" else "image/jpeg"
+    # ✅ توحيد النوع حتى هنا
+    norm_type = normalize_media_type(item.get("type"))
+    media_type = "video/mp4" if norm_type == "video" else "image/jpeg"
 
-    async with httpx.AsyncClient(timeout=120, follow_redirects=True) as c:
+    async with httpx.AsyncClient(timeout=180, follow_redirects=True) as c:
         headers = {}
         if range:
             headers["Range"] = range
@@ -1154,7 +1154,7 @@ async def notify_admin_contact(admin, user_id, username, message):
                      json={"chat_id": admin, "text": text, "parse_mode": "Markdown"})
 
 # ═══════════════════════════════════════════════════════════════════════
-# 👑 Admin API — محمي بالتحقق من initData
+# 👑 Admin API
 # ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/admin/upload-media")
 async def adm_upload_media(
@@ -1183,7 +1183,7 @@ async def adm_upload_media(
     upload_target = int(UPLOAD_CHAT_ID) if UPLOAD_CHAT_ID.lstrip("-").isdigit() else admin_id
 
     try:
-        async with httpx.AsyncClient(timeout=120) as c:
+        async with httpx.AsyncClient(timeout=180) as c:
             with open(tmp_path, "rb") as fh:
                 if media_type == "video":
                     r = await c.post(
@@ -1209,7 +1209,9 @@ async def adm_upload_media(
         except Exception:
             pass
 
-        return {"ok": True, "file_id": file_id, "type": media_type}
+        # ✅ الإصلاح الرئيسي: توحيد النوع "photo" → "image"
+        norm = "video" if media_type == "video" else "image"
+        return {"ok": True, "file_id": file_id, "type": norm}
     finally:
         try: os.unlink(tmp_path)
         except Exception: pass
@@ -1225,7 +1227,21 @@ async def adm_create_ad(req: Request):
     media = body.get("media") or []
     if not isinstance(media, list):
         media = []
-    media_json = json.dumps(media, ensure_ascii=False)
+
+    # ✅ توحيد النوع قبل الحفظ
+    clean_media = []
+    for m in media:
+        if not isinstance(m, dict):
+            continue
+        fid = m.get("file_id")
+        if not fid:
+            continue
+        clean_media.append({
+            "type": normalize_media_type(m.get("type")),
+            "file_id": fid,
+        })
+    media_json = json.dumps(clean_media, ensure_ascii=False)
+
     with db() as conn:
         cur = conn.execute(
             """INSERT INTO ads (title, description, url, contact, type,
@@ -1274,8 +1290,18 @@ async def adm_ads_list(req: Request):
     out = []
     for r in rows:
         d = dict(r)
-        try: d["media"] = json.loads(d.get("media_json") or "[]")
-        except Exception: d["media"] = []
+        try:
+            raw_media = json.loads(d.get("media_json") or "[]")
+        except Exception:
+            raw_media = []
+        # توحيد للعرض في لوحة التحكم
+        clean = []
+        for m in raw_media:
+            clean.append({
+                "type": normalize_media_type(m.get("type")),
+                "file_id": m.get("file_id", ""),
+            })
+        d["media"] = clean
         out.append(d)
     return out
 
@@ -1525,8 +1551,8 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     keys = row.keys()
-    lang = (row["lang"] if "lang" in keys else "ar") or "ar"
-    L = LANGS.get(lang, LANGS["ar"])
+    lang_code = (row["lang"] if "lang" in keys else "ar") or "ar"
+    L = LANGS.get(lang_code, LANGS["ar"])
 
     balance = row["balance"] or 0
     total_earned = row["total_earned"] or 0
