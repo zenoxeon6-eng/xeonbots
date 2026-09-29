@@ -2,9 +2,10 @@ import os, hmac, json, time, sqlite3, hashlib, asyncio, shutil, tempfile
 from urllib.parse import parse_qsl
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict, deque
+from typing import Optional
 
 import httpx
-from fastapi import FastAPI, Request, HTTPException, Header, UploadFile, File, Form
+from fastapi import FastAPI, Request, HTTPException, Header, UploadFile, File, Form, Depends
 from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -45,7 +46,7 @@ DEF_TASK_CONFIRM_DELAY = 3
 
 START_TIME = time.time()
 
-RATE_LIMIT = defaultdict(lambda: deque(maxlen=20))
+RATE_LIMIT = defaultdict(lambda: deque(maxlen=30))
 
 def rate_ok(user_id, max_hits=10, window=10):
     now = time.time()
@@ -56,7 +57,6 @@ def rate_ok(user_id, max_hits=10, window=10):
         return False
     q.append(now)
     return True
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # 🌐 اللغات
@@ -138,7 +138,6 @@ LANGS = {
     },
 }
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # 🌍 الدول
 # ═══════════════════════════════════════════════════════════════════════
@@ -193,7 +192,6 @@ def get_method(country_code, method_id):
         return None
     return next((m for m in c["methods"] if m["id"] == method_id), None)
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # 💾 قاعدة البيانات
 # ═══════════════════════════════════════════════════════════════════════
@@ -213,6 +211,7 @@ def init_db():
             username TEXT, first_name TEXT, last_name TEXT,
             language_code TEXT, is_premium INTEGER DEFAULT 0,
             photo_url TEXT,
+            photo_file_id TEXT,
             balance REAL DEFAULT 0, total_earned REAL DEFAULT 0,
             ads_watched INTEGER DEFAULT 0, ads_today INTEGER DEFAULT 0,
             last_ad_reset INTEGER DEFAULT 0,
@@ -275,12 +274,14 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_user_ads ON user_ads(user_id, ad_id);
         """)
 
+        # migrations — آمنة idempotent
         for tbl, col, typ in [
             ("ads", "media_json", "TEXT"),
             ("ads", "button_text", "TEXT"),
             ("ads", "redirect_url", "TEXT"),
             ("users", "lang", "TEXT DEFAULT 'ar'"),
             ("users", "last_seen", "INTEGER DEFAULT 0"),
+            ("users", "photo_file_id", "TEXT"),
             ("task_clicks", "opened_at", "TEXT"),
             ("task_clicks", "confirmed_at", "TEXT"),
         ]:
@@ -317,6 +318,7 @@ def user_to_dict(row):
         account = json.loads(row["withdrawal_data"] or "{}")
     except Exception:
         account = {}
+    keys = row.keys() if hasattr(row, "keys") else []
     return {
         "user_id": row["user_id"], "username": row["username"] or "",
         "first_name": row["first_name"] or "User", "last_name": row["last_name"] or "",
@@ -335,7 +337,7 @@ def user_to_dict(row):
         "task_wait": int(get_setting("task_wait", "10")),
         "is_admin": row["user_id"] in ADMIN_IDS,
         "bot_username": BOT_USERNAME, "admin_contact": ADMIN_CONTACT,
-        "lang": (row["lang"] if "lang" in row.keys() else "ar") or "ar",
+        "lang": (row["lang"] if "lang" in keys else "ar") or "ar",
     }
 
 
@@ -399,8 +401,11 @@ def user_rank(uid):
         total = conn.execute("SELECT COUNT(*) FROM users WHERE banned=0").fetchone()[0]
     return (row["rank"] if row else 0), total
 
-
+# ═══════════════════════════════════════════════════════════════════════
+# 🔐 Telegram InitData Validation
+# ═══════════════════════════════════════════════════════════════════════
 def validate_init_data(init_data):
+    """يرجع dict {user, start_param} أو None عند الفشل"""
     if not init_data or not BOT_TOKEN:
         return None
     try:
@@ -419,7 +424,41 @@ def validate_init_data(init_data):
         return None
 
 
+async def get_init_data_from_request(req: Request) -> Optional[str]:
+    """يجلب initData من Header أو Body"""
+    hdr = req.headers.get("x-init-data")
+    if hdr:
+        return hdr
+    try:
+        body = await req.json()
+        return body.get("init_data") or body.get("initData")
+    except Exception:
+        return None
+
+
+async def verify_admin(req: Request, user_id_fallback: Optional[int] = None) -> int:
+    """
+    يتحقق من صلاحية المشرف.
+    - إن وُجد initData صالح → يستخرج user_id منه ويتأكد أنه في ADMIN_IDS
+    - وإلا → يفشل (لا تراجع أمني)
+    """
+    init_data = await get_init_data_from_request(req)
+    if init_data:
+        parsed = validate_init_data(init_data)
+        if parsed:
+            uid = parsed["user"].get("id")
+            if uid and uid in ADMIN_IDS:
+                return uid
+            raise HTTPException(403, "غير مصرح - ليس مشرف")
+        raise HTTPException(401, "initData غير صالح")
+    raise HTTPException(401, "initData مطلوب")
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# 📷 Telegram Files
+# ═══════════════════════════════════════════════════════════════════════
 async def fetch_telegram_file(file_id):
+    """يرجع URL مؤقت لملف تيليجرام (يُستخدم للإعلانات streaming)"""
     if not BOT_TOKEN or not file_id:
         return ""
     try:
@@ -435,34 +474,33 @@ async def fetch_telegram_file(file_id):
 
 
 async def fetch_telegram_photo(user_id):
+    """
+    ✅ الإصلاح الجوهري: يرجع (file_id, file_url)
+    file_id دائم ولا ينتهي — هذا ما يجب تخزينه واستخدامه
+    """
     if not BOT_TOKEN:
-        return ""
+        return "", ""
     try:
         async with httpx.AsyncClient(timeout=10) as c:
             r = await c.get(f"https://api.telegram.org/bot{BOT_TOKEN}/getUserProfilePhotos",
                             params={"user_id": user_id, "limit": 1})
             data = r.json()
             if not data.get("ok") or not data["result"]["photos"]:
-                return ""
+                return "", ""
             fid = data["result"]["photos"][0][-1]["file_id"]
             r2 = await c.get(f"https://api.telegram.org/bot{BOT_TOKEN}/getFile",
                              params={"file_id": fid})
             d2 = r2.json()
-            if not d2.get("ok"):
-                return ""
-            return f"https://api.telegram.org/file/bot{BOT_TOKEN}/{d2['result']['file_path']}"
+            url = ""
+            if d2.get("ok"):
+                url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{d2['result']['file_path']}"
+            return fid, url
     except Exception:
-        return ""
+        return "", ""
 
 
 def is_admin(uid):
     return uid in ADMIN_IDS
-
-
-def require_admin(user_id):
-    if user_id not in ADMIN_IDS:
-        raise HTTPException(403, "مشرف فقط")
-
 
 HEARTBEAT_STATS = {"internal": 0, "external": 0, "started": time.time(), "last": 0}
 
@@ -497,7 +535,7 @@ async def external_heartbeat():
 # ═══════════════════════════════════════════════════════════════════════
 # 🚀 FastAPI
 # ═══════════════════════════════════════════════════════════════════════
-app = FastAPI(title="AdVault Pro VIP", version="9.0.0")
+app = FastAPI(title="AdVault Pro VIP", version="10.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -551,12 +589,12 @@ async def api_auth(req: Request):
     row = get_or_create_user(user, ref)
     if row["banned"]:
         raise HTTPException(403, "حسابك موقوف")
-    if not row["photo_url"]:
-        photo = await fetch_telegram_photo(row["user_id"])
+    if not row["photo_url"] or not (row["photo_file_id"] if "photo_file_id" in row.keys() else None):
+        fid, photo = await fetch_telegram_photo(row["user_id"])
         if photo:
             with db() as conn:
-                conn.execute("UPDATE users SET photo_url=? WHERE user_id=?",
-                             (photo, row["user_id"]))
+                conn.execute("UPDATE users SET photo_url=?, photo_file_id=? WHERE user_id=?",
+                             (photo, fid, row["user_id"]))
     reset_ads_if_needed(dict(row))
     fresh = db().execute("SELECT * FROM users WHERE user_id=?", (user["id"],)).fetchone()
     return user_to_dict(fresh)
@@ -590,9 +628,8 @@ async def api_set_lang(req: Request):
         conn.execute("UPDATE users SET lang=? WHERE user_id=?", (lang, user_id))
     return {"ok": True, "lang": lang}
 
-
 # ═══════════════════════════════════════════════════════════════════════
-# 📢 الإعلانات — دائم الإخفاء بعد المشاهدة
+# 📢 الإعلانات
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/ads")
 async def api_ads(user_id: int):
@@ -631,7 +668,6 @@ async def api_ads(user_id: int):
         if not media and a["image_file_id"]:
             media.append({"type": "image", "file_id": a["image_file_id"]})
 
-        # بناء قائمة الوسائط مع URLs الفعلية
         media_out = []
         for i, m in enumerate(media):
             media_out.append({
@@ -753,9 +789,8 @@ async def api_watch_ad(ad_id: int, req: Request):
     return {"reward": reward, "balance": round(new_row["balance"], 2),
             "ads_today": new_row["ads_today"], "daily_limit": limit}
 
-
 # ═══════════════════════════════════════════════════════════════════════
-# 📋 المهام — 4 مراحل
+# 📋 المهام
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/tasks")
 async def api_tasks(user_id: int):
@@ -1118,13 +1153,15 @@ async def notify_admin_contact(admin, user_id, username, message):
         await c.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
                      json={"chat_id": admin, "text": text, "parse_mode": "Markdown"})
 
-
 # ═══════════════════════════════════════════════════════════════════════
-# 👑 Admin API
+# 👑 Admin API — محمي بالتحقق من initData
 # ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/admin/upload-media")
-async def adm_upload_media(file: UploadFile = File(...), user_id: int = Form(...)):
-    require_admin(user_id)
+async def adm_upload_media(
+    req: Request,
+    file: UploadFile = File(...),
+):
+    admin_id = await verify_admin(req)
     if not BOT_TOKEN:
         raise HTTPException(500, "BOT_TOKEN مفقود")
 
@@ -1143,7 +1180,7 @@ async def adm_upload_media(file: UploadFile = File(...), user_id: int = Form(...
         shutil.copyfileobj(file.file, tmp)
         tmp_path = tmp.name
 
-    upload_target = int(UPLOAD_CHAT_ID) if UPLOAD_CHAT_ID.lstrip("-").isdigit() else user_id
+    upload_target = int(UPLOAD_CHAT_ID) if UPLOAD_CHAT_ID.lstrip("-").isdigit() else admin_id
 
     try:
         async with httpx.AsyncClient(timeout=120) as c:
@@ -1181,7 +1218,7 @@ async def adm_upload_media(file: UploadFile = File(...), user_id: int = Form(...
 @app.post("/api/admin/ads/create")
 async def adm_create_ad(req: Request):
     body = await req.json()
-    require_admin(int(body.get("user_id", 0)))
+    await verify_admin(req)
     title = (body.get("title") or "").strip()
     if not title:
         raise HTTPException(400, "العنوان مطلوب")
@@ -1206,8 +1243,8 @@ async def adm_create_ad(req: Request):
 
 
 @app.get("/api/admin/stats")
-async def adm_stats(user_id: int):
-    require_admin(user_id)
+async def adm_stats(req: Request):
+    await verify_admin(req)
     with db() as conn:
         users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
         ads = conn.execute("SELECT COUNT(*) FROM ads WHERE active=1").fetchone()[0]
@@ -1227,8 +1264,8 @@ async def adm_stats(user_id: int):
 
 
 @app.get("/api/admin/ads")
-async def adm_ads_list(user_id: int):
-    require_admin(user_id)
+async def adm_ads_list(req: Request):
+    await verify_admin(req)
     with db() as conn:
         rows = conn.execute(
             """SELECT id, title, description, url, contact, type, media_json,
@@ -1244,8 +1281,8 @@ async def adm_ads_list(user_id: int):
 
 
 @app.delete("/api/admin/ads/{ad_id}")
-async def adm_del_ad(ad_id: int, user_id: int):
-    require_admin(user_id)
+async def adm_del_ad(ad_id: int, req: Request):
+    await verify_admin(req)
     with db() as conn:
         conn.execute("UPDATE ads SET active=0 WHERE id=?", (ad_id,))
     return {"ok": True}
@@ -1253,8 +1290,7 @@ async def adm_del_ad(ad_id: int, user_id: int):
 
 @app.post("/api/admin/ads/{ad_id}/toggle")
 async def adm_toggle_ad(ad_id: int, req: Request):
-    body = await req.json()
-    require_admin(int(body.get("user_id", 0)))
+    await verify_admin(req)
     with db() as conn:
         row = conn.execute("SELECT active FROM ads WHERE id=?", (ad_id,)).fetchone()
         if not row:
@@ -1264,8 +1300,8 @@ async def adm_toggle_ad(ad_id: int, req: Request):
 
 
 @app.get("/api/admin/tasks")
-async def adm_tasks_list(user_id: int):
-    require_admin(user_id)
+async def adm_tasks_list(req: Request):
+    await verify_admin(req)
     with db() as conn:
         rows = conn.execute(
             "SELECT id, title, description, reward, url, icon, active FROM tasks ORDER BY id DESC"
@@ -1276,7 +1312,7 @@ async def adm_tasks_list(user_id: int):
 @app.post("/api/admin/tasks")
 async def adm_add_task(req: Request):
     body = await req.json()
-    require_admin(int(body.get("user_id", 0)))
+    await verify_admin(req)
     title = (body.get("title") or "").strip()
     if not title:
         raise HTTPException(400, "العنوان مطلوب")
@@ -1290,16 +1326,16 @@ async def adm_add_task(req: Request):
 
 
 @app.delete("/api/admin/tasks/{task_id}")
-async def adm_del_task(task_id: int, user_id: int):
-    require_admin(user_id)
+async def adm_del_task(task_id: int, req: Request):
+    await verify_admin(req)
     with db() as conn:
         conn.execute("UPDATE tasks SET active=0 WHERE id=?", (task_id,))
     return {"ok": True}
 
 
 @app.get("/api/admin/withdrawals")
-async def adm_withdrawals(user_id: int, status: str = None):
-    require_admin(user_id)
+async def adm_withdrawals(req: Request, status: str = None):
+    await verify_admin(req)
     q = """SELECT w.*, u.first_name, u.username FROM withdrawals w
            LEFT JOIN users u ON u.user_id = w.user_id"""
     params = []
@@ -1320,8 +1356,7 @@ async def adm_withdrawals(user_id: int, status: str = None):
 
 @app.post("/api/admin/withdrawals/{wid}/approve")
 async def adm_wd_approve(wid: int, req: Request):
-    body = await req.json()
-    require_admin(int(body.get("user_id", 0)))
+    await verify_admin(req)
     with db() as conn:
         row = conn.execute("SELECT * FROM withdrawals WHERE id=?", (wid,)).fetchone()
         if not row:
@@ -1340,8 +1375,7 @@ async def adm_wd_approve(wid: int, req: Request):
 
 @app.post("/api/admin/withdrawals/{wid}/reject")
 async def adm_wd_reject(wid: int, req: Request):
-    body = await req.json()
-    require_admin(int(body.get("user_id", 0)))
+    await verify_admin(req)
     with db() as conn:
         row = conn.execute("SELECT * FROM withdrawals WHERE id=?", (wid,)).fetchone()
         if not row:
@@ -1362,8 +1396,8 @@ async def adm_wd_reject(wid: int, req: Request):
 
 
 @app.get("/api/admin/contacts")
-async def adm_contacts(user_id: int):
-    require_admin(user_id)
+async def adm_contacts(req: Request):
+    await verify_admin(req)
     with db() as conn:
         rows = conn.execute(
             "SELECT * FROM contact_requests WHERE status='new' ORDER BY id DESC LIMIT 100"
@@ -1373,16 +1407,15 @@ async def adm_contacts(user_id: int):
 
 @app.post("/api/admin/contacts/{cid}/done")
 async def adm_contact_done(cid: int, req: Request):
-    body = await req.json()
-    require_admin(int(body.get("user_id", 0)))
+    await verify_admin(req)
     with db() as conn:
         conn.execute("UPDATE contact_requests SET status='done' WHERE id=?", (cid,))
     return {"ok": True}
 
 
 @app.get("/api/admin/settings")
-async def adm_settings_get(user_id: int):
-    require_admin(user_id)
+async def adm_settings_get(req: Request):
+    await verify_admin(req)
     return {
         "ad_reward": get_setting("ad_reward"),
         "daily_limit": get_setting("daily_limit"),
@@ -1396,7 +1429,7 @@ async def adm_settings_get(user_id: int):
 @app.post("/api/admin/settings")
 async def adm_settings_set(req: Request):
     body = await req.json()
-    require_admin(int(body.get("user_id", 0)))
+    await verify_admin(req)
     for k in ["ad_reward", "daily_limit", "min_withdraw", "referral_bonus",
               "daily_bonus", "task_wait"]:
         if k in body:
@@ -1405,8 +1438,8 @@ async def adm_settings_set(req: Request):
 
 
 @app.get("/api/admin/users")
-async def adm_users(user_id: int, q: str = None, limit: int = 50):
-    require_admin(user_id)
+async def adm_users(req: Request, q: str = None, limit: int = 50):
+    await verify_admin(req)
     with db() as conn:
         if q:
             rows = conn.execute(
@@ -1423,8 +1456,7 @@ async def adm_users(user_id: int, q: str = None, limit: int = 50):
 
 @app.post("/api/admin/users/{uid}/toggle-ban")
 async def adm_user_ban(uid: int, req: Request):
-    body = await req.json()
-    require_admin(int(body.get("user_id", 0)))
+    await verify_admin(req)
     with db() as conn:
         r = conn.execute("SELECT banned FROM users WHERE user_id=?", (uid,)).fetchone()
         if not r:
@@ -1437,7 +1469,7 @@ async def adm_user_ban(uid: int, req: Request):
 @app.post("/api/admin/broadcast")
 async def adm_broadcast(req: Request):
     body = await req.json()
-    require_admin(int(body.get("user_id", 0)))
+    await verify_admin(req)
     text = (body.get("text") or "").strip()
     if not text:
         raise HTTPException(400, "النص مطلوب")
@@ -1455,7 +1487,6 @@ async def adm_broadcast(req: Request):
                 await asyncio.sleep(0.05)
             except Exception: pass
     return {"ok": True, "sent": sent}
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # 🤖 Bot Commands
@@ -1482,17 +1513,19 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         row = conn.execute("SELECT * FROM users WHERE user_id=?", (u.id,)).fetchone()
 
     if row and not row["photo_url"]:
-        photo = await fetch_telegram_photo(u.id)
+        fid, photo = await fetch_telegram_photo(u.id)
         if photo:
             with db() as conn:
-                conn.execute("UPDATE users SET photo_url=? WHERE user_id=?", (photo, u.id))
+                conn.execute("UPDATE users SET photo_url=?, photo_file_id=? WHERE user_id=?",
+                             (photo, fid, u.id))
             row = db().execute("SELECT * FROM users WHERE user_id=?", (u.id,)).fetchone()
 
     if not row:
         await update.message.reply_text("حدث خطأ")
         return
 
-    lang = (row["lang"] if "lang" in row.keys() else "ar") or "ar"
+    keys = row.keys()
+    lang = (row["lang"] if "lang" in keys else "ar") or "ar"
     L = LANGS.get(lang, LANGS["ar"])
 
     balance = row["balance"] or 0
@@ -1545,10 +1578,21 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         kb.append([InlineKeyboardButton(f"👑 {L['admin_panel']}",
                                         web_app=WebAppInfo(url=WEBAPP_URL))])
 
-    photo_url = row["photo_url"] or ""
+    photo_fid = ""
     try:
-        if photo_url:
-            await update.message.reply_photo(photo=photo_url, caption=welcome,
+        photo_fid = row["photo_file_id"] if "photo_file_id" in row.keys() else ""
+        if not photo_fid:
+            photo_fid = ""
+    except Exception:
+        photo_fid = ""
+
+    try:
+        if photo_fid:
+            await update.message.reply_photo(photo=photo_fid, caption=welcome,
+                                             parse_mode="Markdown",
+                                             reply_markup=InlineKeyboardMarkup(kb))
+        elif row["photo_url"]:
+            await update.message.reply_photo(photo=row["photo_url"], caption=welcome,
                                              parse_mode="Markdown",
                                              reply_markup=InlineKeyboardMarkup(kb))
         else:
@@ -1556,7 +1600,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                             reply_markup=InlineKeyboardMarkup(kb),
                                             disable_web_page_preview=True)
     except Exception as e:
-        print(f"❌ {e}")
+        print(f"❌ start send: {e}")
         try:
             await update.message.reply_text(welcome, parse_mode="Markdown",
                                             reply_markup=InlineKeyboardMarkup(kb),
