@@ -571,35 +571,83 @@
   .adg-content{flex:1;overflow-y:auto;overflow-x:hidden;
     -webkit-overflow-scrolling:touch;padding-bottom:110px;}
   .adg-media{width:100%;background:#000;position:relative;overflow:hidden;
-    display:flex;align-items:center;justify-content:center;}
-  .adg-media img{width:100%;height:auto;display:block;
-    max-height:55vh;object-fit:cover;background:#000;animation:mediaIn 0.4s ease;}
+    display:flex;align-items:center;justify-content:center;min-height:240px;}
+
+  /* ✅ إخفاء أزرار التحكم من الفيديو نهائيًا */
   .adg-media video{width:100%;height:auto;display:block;
-    max-height:55vh;object-fit:contain;background:#000;animation:mediaIn 0.4s ease;}
+    max-height:55vh;object-fit:contain;background:#000;
+    pointer-events:none !important;
+    user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+    animation:mediaIn 0.4s ease;}
+  .adg-media video::-webkit-media-controls,
+  .adg-media video::-webkit-media-controls-enclosure,
+  .adg-media video::-webkit-media-controls-panel,
+  .adg-media video::-webkit-media-controls-play-button,
+  .adg-media video::-webkit-media-controls-start-playback-button,
+  .adg-media video::-webkit-media-controls-overlay-play-button,
+  .adg-media video::-webkit-media-controls-timeline,
+  .adg-media video::-webkit-media-controls-current-time-display,
+  .adg-media video::-webkit-media-controls-time-remaining-display,
+  .adg-media video::-webkit-media-controls-mute-button,
+  .adg-media video::-webkit-media-controls-volume-slider,
+  .adg-media video::-webkit-media-controls-fullscreen-button,
+  .adg-media video::-webkit-media-controls-toggle-closed-captions-button {
+    display:none !important;
+    -webkit-appearance:none !important;
+    opacity:0 !important;
+    pointer-events:none !important;
+  }
+  .adg-media img{width:100%;height:auto;display:block;
+    max-height:55vh;object-fit:cover;background:#000;
+    pointer-events:none;user-select:none;
+    animation:mediaIn 0.4s ease;}
   @keyframes mediaIn{from{opacity:0;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}
   .adg-media.vertical img,.adg-media.vertical video{max-height:65vh;object-fit:contain;}
   .adg-media-badge{position:absolute;top:12px;right:12px;padding:5px 10px;
     background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);border-radius:10px;
     font-size:11px;font-weight:800;color:#fff;z-index:2;
-    border:1px solid rgba(255,255,255,0.15);font-family:"SF Mono",monospace;}
+    border:1px solid rgba(255,255,255,0.15);font-family:"SF Mono",monospace;
+    pointer-events:none;}
   .adg-media-fallback{width:100%;min-height:280px;display:flex;align-items:center;
     justify-content:center;font-size:100px;background:linear-gradient(135deg,#0d1424,#0a0e1a);}
+
+  /* ✅ زر تفعيل الصوت العائم */
+  .adg-sound-btn{position:absolute;bottom:20px;right:20px;z-index:8;
+    padding:10px 16px;border-radius:999px;
+    background:rgba(0,0,0,0.72);backdrop-filter:blur(12px);
+    border:1.5px solid rgba(255,255,255,0.25);
+    color:#fff;font-size:13px;font-weight:800;
+    display:flex;align-items:center;gap:8px;
+    cursor:pointer;transition:all 0.25s;
+    animation:soundPulse 2s ease-in-out infinite;
+    font-family:inherit;pointer-events:auto !important;}
+  .adg-sound-btn:active{transform:scale(0.94);}
+  .adg-sound-btn svg{width:18px;height:18px;}
+  @keyframes soundPulse{
+    0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,215,0,0.5);}
+    50%{transform:scale(1.06);box-shadow:0 0 0 12px rgba(255,215,0,0);}
+  }
+
   .adg-creative{padding:18px 16px 0;background:linear-gradient(180deg,#0a0e1a,#0d1424);}
   .adg-creative-title{font-size:20px;font-weight:900;color:#fff;line-height:1.35;
     margin-bottom:10px;text-align:right;letter-spacing:-0.3px;}
   .adg-creative-desc{font-size:14px;color:rgba(255,255,255,0.75);
     line-height:1.6;margin-bottom:16px;text-align:right;}
+
+  /* ✅ زر CTA كرابط حقيقي */
   .adg-cta-btn{display:flex;align-items:center;justify-content:space-between;
     width:100%;padding:16px 20px;background:linear-gradient(135deg,#4f9bff,#2563eb);
     border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:900;
     font-family:inherit;cursor:pointer;box-shadow:0 8px 24px rgba(37,99,235,0.4);
-    transition:all 0.2s;text-decoration:none;margin-bottom:16px;}
+    transition:all 0.2s;text-decoration:none;margin-bottom:16px;
+    -webkit-tap-highlight-color:transparent;}
   .adg-cta-btn:active{transform:scale(0.98);box-shadow:0 4px 16px rgba(37,99,235,0.6);}
   .adg-cta-btn.claimed{background:linear-gradient(135deg,#10b981,#059669);
     box-shadow:0 8px 24px rgba(16,185,129,0.4);cursor:default;}
   .adg-cta-btn.claimed:active{transform:none;}
   .adg-cta-text{flex:1;display:flex;align-items:center;justify-content:center;}
   .adg-cta-icon{font-size:22px;}
+
   .adg-reward-box{margin:0 16px 16px;padding:16px;
     background:rgba(255,255,255,0.05);
     border:1px solid rgba(255,255,255,0.08);border-radius:16px;}
@@ -629,13 +677,6 @@
   .adg-advert{font-size:11px;color:rgba(255,255,255,0.4);
     text-align:center;font-weight:600;}
   .adg-advert b{color:rgba(255,255,255,0.65);font-weight:700;}
-  .adg-unmute{position:absolute;bottom:16px;right:16px;z-index:6;
-    width:44px;height:44px;border-radius:50%;
-    background:rgba(0,0,0,0.65);backdrop-filter:blur(10px);
-    border:1px solid rgba(255,255,255,0.2);
-    color:#fff;font-size:18px;display:flex;align-items:center;
-    justify-content:center;cursor:pointer;transition:all 0.2s;}
-  .adg-unmute:active{transform:scale(0.9);}
 </style>
 </head>
 <body>
@@ -898,7 +939,7 @@
     <div class="adg-creative">
       <div class="adg-creative-title" id="adgTitle">—</div>
       <div class="adg-creative-desc" id="adgDesc">—</div>
-      <button class="adg-cta-btn" id="adgCtaBtn" onclick="openAdLink(event)">
+      <button class="adg-cta-btn" id="adgCtaBtn" onclick="handleCtaClick(event)">
         <span class="adg-cta-text" id="adgCtaText">فتح</span>
         <span class="adg-cta-icon" id="adgCtaIcon">👆</span>
       </button>
@@ -1294,29 +1335,57 @@ function showNextAd(){
   watchAd(a.id);
 }
 
-function showUnmuteButton(){
+// ═══════════════════════════════════════════════════════
+// ✅ فتح الروابط — موثوق جدًا
+// ═══════════════════════════════════════════════════════
+function openExternalUrl(url){
+  if (!url) return false;
+  try {
+    const w = window.Telegram?.WebApp;
+    // t.me links → openTelegramLink
+    if (url.includes("t.me") && w?.openTelegramLink){
+      try { w.openTelegramLink(url); return true; } catch(e){}
+    }
+    // Any URL → openLink
+    if (w?.openLink){
+      try { w.openLink(url, {try_instant_view: false}); return true; } catch(e){}
+    }
+    // Fallback 1: window.open
+    const win = window.open(url, "_blank");
+    if (win) return true;
+    // Fallback 2: location.href
+    window.location.href = url;
+    return true;
+  } catch(e){
+    try { window.location.href = url; return true; } catch(e2){}
+    return false;
+  }
+}
+
+function showSoundBtn(){
   const container = document.getElementById("adgMedia");
   if (!container) return;
-  if (container.querySelector(".adg-unmute")) return;
+  if (container.querySelector(".adg-sound-btn")) return;
   const btn = document.createElement("button");
-  btn.className = "adg-unmute";
-  btn.innerHTML = "🔇";
+  btn.className = "adg-sound-btn";
+  btn.type = "button";
+  btn.innerHTML = `<span>🔇</span><span>${lang === "ar" ? "اضغط للصوت" : "Tap for sound"}</span>`;
   btn.onclick = (e) => {
     e.stopPropagation();
     const v = document.getElementById("adActiveVideo");
     if (v){
       v.muted = false;
       v.volume = 1;
-      v.play().catch(()=>{});
+      const p = v.play();
+      if (p && p.catch) p.catch(()=>{});
     }
     btn.remove();
   };
-  container.style.position = "relative";
   container.appendChild(btn);
 }
 
 // ═══════════════════════════════════════════════════════
-// AD WATCH
+// AD WATCH — فيديو بدون تحكم، صوت تلقائي، حلقة مستمرة
 // ═══════════════════════════════════════════════════════
 async function watchAd(adId){
   const ad = ads.find(x => x.id === adId);
@@ -1357,7 +1426,7 @@ async function watchAd(adId){
     completed: false,
     timerInterval: null,
     mediaInterval: null,
-    minViewTime: 5,
+    minViewTime: 4,
     realTotal: realTotal,
     perMedia: perMedia,
     mediaList: mediaList,
@@ -1373,11 +1442,10 @@ async function watchAd(adId){
     : "Press \"Open\" to get your reward";
   brandName.textContent = ad.title || "AdVault Pro";
 
-  ctaText.textContent = lang === "ar" ? "فتح" : "Open";
+  const ctaLabel = (ad.button_text || "").trim() || (lang === "ar" ? "فتح الرابط" : "Open Link");
+  ctaText.textContent = ctaLabel;
   ctaIcon.textContent = "👆";
   ctaBtn.classList.remove("claimed");
-  ctaBtn.onclick = (e) => openAdLink(e);
-  ctaBtn.style.pointerEvents = "auto";
 
   progressBar.innerHTML = "";
   for (let i = 0; i < mediaCount; i++){
@@ -1395,9 +1463,12 @@ async function watchAd(adId){
     let html = "";
 
     if (mtype === "video"){
-      html = `<video id="adActiveVideo" src="${m.url}" playsinline webkit-playsinline
-        x5-playsinline preload="auto" controls
-        style="width:100%;max-height:55vh;background:#000;object-fit:contain;"
+      // ✅ بدون controls، autoplay، muted (لمتطلبات المتصفح)، loop، pointer-events:none
+      html = `<video id="adActiveVideo" src="${m.url}"
+        autoplay muted loop playsinline webkit-playsinline x5-playsinline
+        preload="auto" disableremoteplayback disablepictureinpicture
+        controlsList="nodownload noplaybackrate nofullscreen noremoteplayback"
+        oncontextmenu="return false;"
         onerror="this.parentElement.innerHTML='<div class=\\'adg-media-fallback\\'>🎬</div>'"></video>`;
     } else if (mtype === "image" || mtype === "photo"){
       html = `<img src="${m.url}" alt="" loading="eager"
@@ -1413,19 +1484,17 @@ async function watchAd(adId){
     mediaEl.innerHTML = html;
     mediaEl.classList.remove("vertical");
 
+    // محاولة التشغيل
     const vid = document.getElementById("adActiveVideo");
     if (vid){
-      vid.muted = false;
+      vid.muted = true;      // مطلوب لتشغيل تلقائي
       vid.volume = 1;
       const p = vid.play();
-      if (p && p.catch){
-        p.catch(() => {
-          vid.muted = true;
-          vid.play().catch(()=>{});
-          showUnmuteButton();
-        });
-      }
-      if (vid.muted) showUnmuteButton();
+      if (p && p.catch) p.catch(()=>{});
+      // إظهار زر الصوت دائمًا للفيديو
+      setTimeout(() => {
+        if (document.getElementById("adActiveVideo")) showSoundBtn();
+      }, 600);
     }
   }
 
@@ -1485,7 +1554,6 @@ async function watchAd(adId){
         ctaBtn.classList.add("claimed");
         ctaText.textContent = lang === "ar" ? "استلم المكافأة 🎁" : "Claim Reward 🎁";
         ctaIcon.textContent = "🎁";
-        ctaBtn.onclick = () => completeAd(ad.id);
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
       } else if (!clicked){
         timerBadge.textContent = "—";
@@ -1500,44 +1568,47 @@ async function watchAd(adId){
   }, 1000);
 }
 
-function openAdLink(event){
+// ✅ CTA click — إذا انتهى العداد → استلام، وإلا → فتح الرابط
+function handleCtaClick(event){
   event.preventDefault();
+  event.stopPropagation();
   if (!adPlayState || !adPlayState.ad) return;
 
   const ad = adPlayState.ad;
-  const ctaText = document.getElementById("adgCtaText");
-  const ctaIcon = document.getElementById("adgCtaIcon");
 
-  if (adPlayState.completed){
-    completeAd(ad.id);
-    return;
-  }
-
+  // إلغاء كتم الصوت
   const v = document.getElementById("adActiveVideo");
   if (v){
     try {
       v.muted = false;
       v.volume = 1;
-      v.play().catch(()=>{});
-      const ub = document.querySelector(".adg-unmute");
-      if (ub) ub.remove();
+      const p = v.play();
+      if (p && p.catch) p.catch(()=>{});
     } catch(e){}
+    const sb = document.querySelector(".adg-sound-btn");
+    if (sb) sb.remove();
   }
 
-  const link = ad.redirect_url || ad.url || "";
+  // إذا انتهى الإعلان ومؤهل للاستلام
+  if (adPlayState.completed){
+    completeAd(ad.id);
+    return;
+  }
+
+  // فتح الرابط
+  const link = (ad.redirect_url || ad.url || "").trim();
   if (link){
-    if (tg && link.startsWith("https://t.me/")){
-      try { tg.openTelegramLink(link); } catch(e){ tg.openLink(link); }
-    } else if (tg){
-      try { tg.openLink(link); } catch(e){ window.open(link, "_blank"); }
-    } else {
-      window.open(link, "_blank");
-    }
+    openExternalUrl(link);
+  } else {
+    toast(lang === "ar" ? "لا يوجد رابط" : "No link", "error");
+    return;
   }
 
   if (!adPlayState.clicked){
     adPlayState.clicked = true;
     adPlayState.clickedAt = Date.now();
+    const ctaText = document.getElementById("adgCtaText");
+    const ctaIcon = document.getElementById("adgCtaIcon");
     ctaText.textContent = lang === "ar" ? "تم فتح الرابط ✓" : "Link Opened ✓";
     ctaIcon.textContent = "✓";
     toast(lang === "ar"
@@ -1675,13 +1746,7 @@ async function startTask(taskId){
   if (!task || task.completed) return;
 
   if (task.url){
-    if (tg && task.url.startsWith("https://t.me/")){
-      try { tg.openTelegramLink(task.url); } catch(e){ tg.openLink(task.url); }
-    } else if (tg){
-      try { tg.openLink(task.url); } catch(e){ window.open(task.url, "_blank"); }
-    } else {
-      window.open(task.url, "_blank");
-    }
+    openExternalUrl(task.url);
   }
 
   try {
@@ -2047,7 +2112,7 @@ function adminCreateAdModal(){
     <input class="input" id="aDur" type="number" value="15" />
     <label class="label">Button Text</label>
     <input class="input input-rtl" id="aBtnText" placeholder="مثال: اشتر الآن" style="direction:rtl;text-align:right;" />
-    <label class="label">Redirect URL</label>
+    <label class="label">Redirect URL (رابط الزر)</label>
     <input class="input" id="aRedirect" placeholder="https://..." />
     <label class="label">Media (video / images)</label>
     <div class="media-grid" id="mediaGrid">
