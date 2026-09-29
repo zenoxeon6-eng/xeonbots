@@ -1,13 +1,11 @@
-
-
-import os, hmac, json, time, sqlite3, hashlib, asyncio, re, shutil, tempfile
+import os, hmac, json, time, sqlite3, hashlib, asyncio, shutil, tempfile
 from urllib.parse import parse_qsl
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict, deque
 
 import httpx
 from fastapi import FastAPI, Request, HTTPException, Header, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, Response, StreamingResponse, JSONResponse
+from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -19,10 +17,10 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters, ContextTypes,
 )
-from telegram.error import Conflict, TelegramError
+from telegram.error import Conflict
 
 # ═══════════════════════════════════════════════════════════════════════
-# ⚙️ الإعدادات العامة
+# ⚙️ الإعدادات
 # ═══════════════════════════════════════════════════════════════════════
 BOT_TOKEN      = os.getenv("BOT_TOKEN", "8909959176:AAHtOv4alGndeFTY0_Juqf5hpLsQV5z-hlc")
 WEBAPP_URL     = os.getenv("WEBAPP_URL", "https://xeonbots.onrender.com/").rstrip("/") + "/"
@@ -47,9 +45,6 @@ DEF_TASK_CONFIRM_DELAY = 3
 
 START_TIME = time.time()
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🛡️ Rate Limiter
-# ═══════════════════════════════════════════════════════════════════════
 RATE_LIMIT = defaultdict(lambda: deque(maxlen=20))
 
 def rate_ok(user_id, max_hits=10, window=10):
@@ -79,41 +74,30 @@ LANGS = {
         "my_ref": "رابط الإحالة", "my_balance": "رصيدي",
         "contact": "تواصل معنا", "leaderboard": "المتصدرون",
         "admin_panel": "لوحة التحكم",
-        "watch_now": "شاهد الآن واربح", "start_ad": "ابدأ مشاهدة الإعلان",
+        "watch_now": "شاهد الآن", "start_ad": "ابدأ مشاهدة الإعلان",
         "no_ads": "لا إعلانات متاحة",
-        "all_watched": "شاهدت كل الإعلانات المتاحة، عد لاحقًا",
-        "daily_reward": "المكافأة اليومية", "claim": "استلام", "wait": "انتظر",
+        "all_watched": "شاهدت كل الإعلانات، عد لاحقًا",
+        "daily_reward": "المكافأة اليومية", "claim": "استلام",
         "tasks": "المهام", "task_open": "انضم الآن",
-        "task_opened": "تم فتح الرابط",
-        "task_confirm": "تأكيد الدخول",
-        "task_wait": "انتظر {} ثانية",
-        "task_ready": "استلم", "task_done": "تم",
+        "task_confirm": "تأكيد الدخول", "task_ready": "استلم",
+        "task_done": "تم",
         "wallet": "المحفظة", "profile": "حسابي", "home": "الرئيسية", "top": "المتصدرون",
         "withdraw": "سحب", "amount": "المبلغ",
         "send_request": "إرسال طلب السحب", "min_withdraw": "الحد الأدنى",
-        "country": "اختر دولتك", "method": "طريقة السحب", "save_data": "حفظ البيانات",
-        "open_link": "فتح الرابط", "back": "رجوع",
-        "welcome_back": "أهلاً بعودتك", "select_lang": "اختر اللغة",
+        "country": "دولتك", "method": "طريقة السحب", "save_data": "حفظ",
+        "open_link": "فتح الرابط", "welcome_back": "أهلاً بعودتك",
+        "select_lang": "اختر اللغة",
         "contact_us": "تواصل معنا", "contact_desc": "لأي استفسار أو طلب إعلان",
-        "send": "إرسال", "direct_contact": "تواصل مباشر", "open_admin": "فتح شات الإدارة",
-        "loading": "جارٍ التحميل", "copy": "نسخ", "share": "مشاركة", "copied": "تم النسخ",
-        "error": "خطأ", "success": "تم بنجاح",
-        "no_tasks": "لا مهام متاحة", "no_history": "لا طلبات سابقة",
-        "no_users": "لا مستخدمين", "no_messages": "لا رسائل",
-        "no_withdrawals": "لا طلبات سحب", "history": "آخر الطلبات",
-        "pending": "معلق", "approved": "موافق", "rejected": "مرفوض",
-        "claim_done": "استلمت المكافأة",
-        "not_completed": "أكمل الإعلان لتحصل على المكافأة",
-        "limit_reached": "وصلت الحد اليومي، عد غدًا",
-        "watch_now_btn": "شاهد الآن", "claim_btn": "استلم {}",
-        "watching": "جارٍ المشاهدة", "wait_txt": "انتظر", "done": "تم",
-        "sound_on": "اضغط لتفعيل الصوت",
-        "confirm_first": "اضغط زر انضم أولاً",
-        "confirm_entry": "تأكيد الدخول",
-        "opening": "جارٍ الفتح...",
-        "link_opened": "تم فتح الرابط ✓",
-        "return_confirm": "عد واضغط تأكيد الدخول",
-        "open_btn": "فتح",
+        "send": "إرسال", "direct_contact": "تواصل مباشر", "open_admin": "شات الإدارة",
+        "copy": "نسخ", "share": "مشاركة", "copied": "تم النسخ",
+        "no_tasks": "لا مهام", "no_history": "لا طلبات",
+        "history": "آخر الطلبات", "pending": "معلق",
+        "approved": "موافق", "rejected": "مرفوض",
+        "not_completed": "أكمل الإعلان أولاً",
+        "limit_reached": "وصلت الحد اليومي",
+        "claim_btn": "استلم {}", "wait_txt": "انتظر", "done": "تم",
+        "confirm_first": "اضغط انضم أولاً",
+        "opening": "جارٍ الفتح", "open_btn": "فتح",
     },
     "en": {
         "dir": "ltr", "name": "English",
@@ -127,47 +111,36 @@ LANGS = {
         "my_ref": "Referral Link", "my_balance": "My Balance",
         "contact": "Contact Us", "leaderboard": "Leaderboard",
         "admin_panel": "Admin Panel",
-        "watch_now": "Watch Now & Earn", "start_ad": "Start Watching",
+        "watch_now": "Watch Now", "start_ad": "Start Watching",
         "no_ads": "No ads available",
-        "all_watched": "You watched all available ads, come back later",
-        "daily_reward": "Daily Reward", "claim": "Claim", "wait": "Wait",
+        "all_watched": "You watched all ads, come back later",
+        "daily_reward": "Daily Reward", "claim": "Claim",
         "tasks": "Tasks", "task_open": "Join Now",
-        "task_opened": "Link Opened",
-        "task_confirm": "Confirm Entry",
-        "task_wait": "Wait {}s",
-        "task_ready": "Claim", "task_done": "Done",
+        "task_confirm": "Confirm Entry", "task_ready": "Claim",
+        "task_done": "Done",
         "wallet": "Wallet", "profile": "Profile", "home": "Home", "top": "Top",
         "withdraw": "Withdraw", "amount": "Amount",
         "send_request": "Send Withdraw Request", "min_withdraw": "Minimum",
-        "country": "Country", "method": "Method", "save_data": "Save Data",
-        "open_link": "Open Link", "back": "Back",
-        "welcome_back": "Welcome back", "select_lang": "Select Language",
+        "country": "Country", "method": "Method", "save_data": "Save",
+        "open_link": "Open Link", "welcome_back": "Welcome back",
+        "select_lang": "Select Language",
         "contact_us": "Contact Us", "contact_desc": "For inquiries or ad requests",
         "send": "Send", "direct_contact": "Direct Contact", "open_admin": "Open Admin Chat",
-        "loading": "Loading", "copy": "Copy", "share": "Share", "copied": "Copied",
-        "error": "Error", "success": "Success",
-        "no_tasks": "No tasks available", "no_history": "No history",
-        "no_users": "No users", "no_messages": "No messages",
-        "no_withdrawals": "No withdrawals", "history": "History",
-        "pending": "Pending", "approved": "Approved", "rejected": "Rejected",
-        "claim_done": "Reward claimed",
-        "not_completed": "Complete the ad to earn reward",
-        "limit_reached": "Daily limit reached, come back tomorrow",
-        "watch_now_btn": "Watch Now", "claim_btn": "Claim {}",
-        "watching": "Watching", "wait_txt": "Wait", "done": "Done",
-        "sound_on": "Tap to enable sound",
+        "copy": "Copy", "share": "Share", "copied": "Copied",
+        "no_tasks": "No tasks", "no_history": "No history",
+        "history": "History", "pending": "Pending",
+        "approved": "Approved", "rejected": "Rejected",
+        "not_completed": "Complete the ad first",
+        "limit_reached": "Daily limit reached",
+        "claim_btn": "Claim {}", "wait_txt": "Wait", "done": "Done",
         "confirm_first": "Click Join first",
-        "confirm_entry": "Confirm Entry",
-        "opening": "Opening...",
-        "link_opened": "Link Opened ✓",
-        "return_confirm": "Return & press Confirm Entry",
-        "open_btn": "Open",
+        "opening": "Opening", "open_btn": "Open",
     },
 }
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🌍 الدول وطرق السحب
+# 🌍 الدول
 # ═══════════════════════════════════════════════════════════════════════
 COUNTRIES = {
     "YE": {"name": "🇾🇪 اليمن", "flag": "🇾🇪", "label": "اليمن", "methods": [
@@ -339,9 +312,6 @@ def set_setting(key, value):
         conn.execute("INSERT OR REPLACE INTO settings (key,value) VALUES (?,?)", (key, str(value)))
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 👤 المستخدمون
-# ═══════════════════════════════════════════════════════════════════════
 def user_to_dict(row):
     try:
         account = json.loads(row["withdrawal_data"] or "{}")
@@ -430,9 +400,6 @@ def user_rank(uid):
     return (row["rank"] if row else 0), total
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🔐 التحقق
-# ═══════════════════════════════════════════════════════════════════════
 def validate_init_data(init_data):
     if not init_data or not BOT_TOKEN:
         return None
@@ -497,9 +464,6 @@ def require_admin(user_id):
         raise HTTPException(403, "مشرف فقط")
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 💓 Heartbeat
-# ═══════════════════════════════════════════════════════════════════════
 HEARTBEAT_STATS = {"internal": 0, "external": 0, "started": time.time(), "last": 0}
 
 
@@ -533,7 +497,7 @@ async def external_heartbeat():
 # ═══════════════════════════════════════════════════════════════════════
 # 🚀 FastAPI
 # ═══════════════════════════════════════════════════════════════════════
-app = FastAPI(title="AdVault Pro VIP", version="8.0.0")
+app = FastAPI(title="AdVault Pro VIP", version="9.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -570,9 +534,6 @@ async def api_langs_all():
     return LANGS
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🔑 AUTH
-# ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/auth")
 async def api_auth(req: Request):
     body = await req.json()
@@ -631,7 +592,7 @@ async def api_set_lang(req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📢 الإعلانات
+# 📢 الإعلانات — دائم الإخفاء بعد المشاهدة
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/ads")
 async def api_ads(user_id: int):
@@ -670,13 +631,21 @@ async def api_ads(user_id: int):
         if not media and a["image_file_id"]:
             media.append({"type": "image", "file_id": a["image_file_id"]})
 
+        # بناء قائمة الوسائط مع URLs الفعلية
+        media_out = []
+        for i, m in enumerate(media):
+            media_out.append({
+                "type": m.get("type", "image"),
+                "url": f"/api/ad-media/{a['id']}/{i}",
+                "index": i,
+            })
+
         out.append({
             "id": a["id"], "title": a["title"], "description": a["description"] or "",
             "url": a["url"] or "", "contact": a["contact"] or "",
             "type": a["type"] or "link",
-            "media": [{"type": m.get("type"), "url": f"/api/ad-media/{a['id']}/{i}",
-                       "count": len(media)} for i, m in enumerate(media)],
-            "media_count": len(media),
+            "media": media_out,
+            "media_count": len(media_out),
             "reward": a["reward"] or 0.20,
             "duration": a["duration"] or 15,
             "button_text": a["button_text"] or "",
@@ -721,7 +690,7 @@ async def api_ad_media(ad_id: int, index: int, range: str = Header(None)):
 
     file_url = await fetch_telegram_file(file_id)
     if not file_url:
-        raise HTTPException(404, "تعذر الجلب من تيليجرام")
+        raise HTTPException(404, "تعذر الجلب")
 
     media_type = "video/mp4" if item.get("type") == "video" else "image/jpeg"
 
@@ -731,7 +700,7 @@ async def api_ad_media(ad_id: int, index: int, range: str = Header(None)):
             headers["Range"] = range
         resp = await c.get(file_url, headers=headers)
         if resp.status_code not in (200, 206):
-            raise HTTPException(resp.status_code, f"خطأ: {resp.status_code}")
+            raise HTTPException(resp.status_code, f"خطأ {resp.status_code}")
 
         if media_type == "video/mp4":
             return StreamingResponse(
@@ -786,7 +755,7 @@ async def api_watch_ad(ad_id: int, req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 📋 المهام — نظام 4 مراحل محمي
+# 📋 المهام — 4 مراحل
 # ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/tasks")
 async def api_tasks(user_id: int):
@@ -847,10 +816,7 @@ async def api_tasks(user_id: int):
                     opened_at = opened_at.replace(tzinfo=timezone.utc)
                 diff = (now - opened_at).total_seconds()
                 item["remaining"] = max(0, int(wait_seconds - diff))
-                if diff >= wait_seconds:
-                    item["state"] = "ready"
-                else:
-                    item["state"] = "waiting"
+                item["state"] = "ready" if diff >= wait_seconds else "waiting"
             except Exception:
                 item["state"] = "waiting"
                 item["remaining"] = wait_seconds
@@ -875,25 +841,20 @@ async def api_task_start(task_id: int, req: Request):
                         (user_id, task_id)).fetchone():
             raise HTTPException(400, "منجزة مسبقًا")
 
-        try:
-            existing = conn.execute(
-                "SELECT * FROM task_clicks WHERE user_id=? AND task_id=?",
-                (user_id, task_id)).fetchone()
-        except sqlite3.OperationalError:
-            existing = None
+        existing = conn.execute(
+            "SELECT * FROM task_clicks WHERE user_id=? AND task_id=?",
+            (user_id, task_id)).fetchone()
 
         now_iso = datetime.now(timezone.utc).isoformat()
         if existing:
             conn.execute(
-                "UPDATE task_clicks SET clicked_at=?, opened_at=NULL, confirmed_at=NULL WHERE user_id=? AND task_id=?",
+                """UPDATE task_clicks SET clicked_at=?, opened_at=NULL, confirmed_at=NULL
+                   WHERE user_id=? AND task_id=?""",
                 (now_iso, user_id, task_id))
         else:
-            try:
-                conn.execute(
-                    "INSERT INTO task_clicks (user_id, task_id, clicked_at) VALUES (?,?,?)",
-                    (user_id, task_id, now_iso))
-            except sqlite3.OperationalError:
-                pass
+            conn.execute(
+                "INSERT INTO task_clicks (user_id, task_id, clicked_at) VALUES (?,?,?)",
+                (user_id, task_id, now_iso))
 
     return {"ok": True, "state": "opened"}
 
@@ -902,7 +863,6 @@ async def api_task_start(task_id: int, req: Request):
 async def api_task_confirm(task_id: int, req: Request):
     body = await req.json()
     user_id = int(body.get("user_id", 0))
-    min_delay = DEF_TASK_CONFIRM_DELAY
 
     with db() as conn:
         task = conn.execute("SELECT * FROM tasks WHERE id=? AND active=1", (task_id,)).fetchone()
@@ -923,8 +883,8 @@ async def api_task_confirm(task_id: int, req: Request):
             if clicked_at.tzinfo is None:
                 clicked_at = clicked_at.replace(tzinfo=timezone.utc)
             diff = (datetime.now(timezone.utc) - clicked_at).total_seconds()
-            if diff < min_delay:
-                raise HTTPException(400, f"انتظر {int(min_delay - diff)} ثانية قبل التأكيد")
+            if diff < DEF_TASK_CONFIRM_DELAY:
+                raise HTTPException(400, f"انتظر {int(DEF_TASK_CONFIRM_DELAY - diff)} ثانية")
         except HTTPException:
             raise
         except Exception:
@@ -935,8 +895,7 @@ async def api_task_confirm(task_id: int, req: Request):
             "UPDATE task_clicks SET opened_at=? WHERE user_id=? AND task_id=?",
             (now_iso, user_id, task_id))
 
-    wait_seconds = int(get_setting("task_wait", "10"))
-    return {"ok": True, "state": "waiting", "wait_seconds": wait_seconds}
+    return {"ok": True, "state": "waiting", "wait_seconds": int(get_setting("task_wait", "10"))}
 
 
 @app.post("/api/tasks/{task_id}/claim")
@@ -987,9 +946,6 @@ async def api_task_claim(task_id: int, req: Request):
     return {"reward": task["reward"] or 0, "balance": round(row["balance"], 2)}
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🎁 اليومية
-# ═══════════════════════════════════════════════════════════════════════
 @app.post("/api/daily")
 async def api_daily(req: Request):
     body = await req.json()
@@ -1025,9 +981,6 @@ async def api_leaderboard():
              "total_earned": round(r["total_earned"], 2)} for i, r in enumerate(rows)]
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🌍 السحب
-# ═══════════════════════════════════════════════════════════════════════
 @app.get("/api/countries")
 async def api_countries():
     return COUNTRIES
@@ -1505,7 +1458,7 @@ async def adm_broadcast(req: Request):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 🤖 /start
+# 🤖 Bot Commands
 # ═══════════════════════════════════════════════════════════════════════
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     u = update.effective_user
@@ -1807,9 +1760,6 @@ async def set_bot_commands(app_bot):
         print(f"commands: {e}")
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# 🚀 التشغيل
-# ═══════════════════════════════════════════════════════════════════════
 async def run_bot():
     if not BOT_TOKEN:
         print("⚠️ BOT_TOKEN missing")
@@ -1875,7 +1825,6 @@ async def main():
     print(f"👑 {ADMIN_IDS}")
     print(f"🤖 @{BOT_USERNAME}")
     print(f"💓 Heartbeat: {PING_INTERVAL}s")
-    print(f"⏱ Task wait: {DEF_TASK_WAIT}s")
 
     await asyncio.gather(
         run_web(),
