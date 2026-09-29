@@ -61,98 +61,184 @@
     box-shadow:0 0 10px var(--green);animation:hbPulse 1s ease-in-out infinite;}
   @keyframes hbPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.4);opacity:0.6;}}
 
-  /* ═══════════ WALLET CARD — واقعية ═══════════ */
-  .wallet-card{position:relative;padding:24px 22px 22px;margin-bottom:18px;
+  /* ═════════════════════════════════════════════════════════════
+     BANK CARD — بحجم بطاقة صراف حقيقي (Visa/Mastercard ratio)
+     ═════════════════════════════════════════════════════════════ */
+  .bank-card-wrap{
+    width:100%;
+    margin-bottom:18px;
+    perspective:1200px;
+  }
+  .bank-card{
+    position:relative;
+    width:100%;
+    aspect-ratio:1.586 / 1; /* ISO/IEC 7810 ID-1 نسبة بطاقة البنك */
+    max-height:260px;
+    border-radius:20px;
+    padding:5.5% 6%;
     background:
-      linear-gradient(135deg,#0d0d24 0%,#1a1a3e 30%,#0a0a1a 60%,#1c1c42 100%);
-    border-radius:26px;overflow:hidden;
+      linear-gradient(135deg,#0b0b22 0%,#14143a 25%,#0a0a1e 50%,#1a1a44 75%,#0b0b22 100%);
     box-shadow:
-      0 25px 70px rgba(0,0,0,0.7),
-      0 0 0 1px rgba(255,215,0,0.3),
-      inset 0 1px 0 rgba(255,255,255,0.12),
-      inset 0 -1px 0 rgba(0,0,0,0.4);
-    border:1px solid rgba(255,215,0,0.25);
-    isolation:isolate;}
-  .wallet-card::before{content:"";position:absolute;inset:0;pointer-events:none;
+      0 30px 80px rgba(0,0,0,0.8),
+      0 0 0 1px rgba(255,215,0,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.15),
+      inset 0 -1px 0 rgba(0,0,0,0.5);
+    overflow:hidden;
+    display:flex;flex-direction:column;justify-content:space-between;
+    isolation:isolate;
+  }
+  .bank-card::before{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
     background:
-      radial-gradient(circle at 15% 5%,rgba(255,215,0,0.3),transparent 45%),
-      radial-gradient(circle at 85% 95%,rgba(168,85,247,0.25),transparent 45%),
-      radial-gradient(circle at 50% 50%,rgba(59,130,246,0.1),transparent 60%);}
-  .wallet-card::after{content:"";position:absolute;top:-50%;right:-50%;width:200%;height:200%;pointer-events:none;
+      radial-gradient(circle at 15% 10%,rgba(255,215,0,0.35),transparent 45%),
+      radial-gradient(circle at 85% 90%,rgba(168,85,247,0.28),transparent 45%),
+      radial-gradient(circle at 50% 50%,rgba(59,130,246,0.12),transparent 60%);
+  }
+  .bank-card::after{
+    content:"";position:absolute;top:-50%;right:-50%;width:200%;height:200%;pointer-events:none;
     background:conic-gradient(from 0deg,transparent 0deg,rgba(255,215,0,0.14) 60deg,transparent 120deg);
-    animation:rotate 14s linear infinite;}
+    animation:rotate 14s linear infinite;z-index:1;
+  }
   @keyframes rotate{to{transform:rotate(360deg);}}
 
   /* Holographic shimmer */
-  .wallet-card .holo{position:absolute;inset:0;pointer-events:none;z-index:1;
-    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,0.08) 45%,
-      rgba(255,215,0,0.15) 50%,rgba(255,255,255,0.08) 55%,transparent 70%);
+  .bank-holo{
+    position:absolute;inset:0;pointer-events:none;z-index:2;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,0.1) 45%,
+      rgba(255,215,0,0.18) 50%,rgba(255,255,255,0.1) 55%,transparent 70%);
     background-size:250% 250%;
-    animation:holo 6s linear infinite;mix-blend-mode:overlay;}
+    animation:holo 6s linear infinite;mix-blend-mode:overlay;
+  }
   @keyframes holo{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
 
-  .wallet-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:26px;position:relative;z-index:3;}
-  .wallet-brand{font-size:13px;font-weight:900;letter-spacing:3px;color:var(--gold);
+  /* Top row */
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;
+    position:relative;z-index:3;}
+  .card-brand{
+    font-size:11px;font-weight:900;letter-spacing:2.5px;color:var(--gold);
     text-shadow:0 0 24px rgba(255,215,0,0.6),0 2px 4px rgba(0,0,0,0.5);
-    display:flex;align-items:center;gap:6px;}
-  .wallet-brand::before{content:"◆";color:var(--gold);font-size:10px;}
+    display:flex;align-items:center;gap:5px;
+    line-height:1;
+  }
+  .card-brand .dot{
+    display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--gold);box-shadow:0 0 12px var(--gold);
+  }
+  .card-contactless{
+    font-size:18px;color:var(--gold);transform:rotate(90deg);
+    opacity:0.85;filter:drop-shadow(0 0 8px rgba(255,215,0,0.6));
+    letter-spacing:-2px;
+  }
 
-  .wallet-chip{width:46px;height:36px;border-radius:8px;position:relative;
+  /* Chip */
+  .card-chip{
+    width:44px;height:34px;border-radius:7px;position:relative;
+    margin-top:2%;
     background:
       linear-gradient(135deg,#f7e079 0%,#c9a227 25%,#8b6914 50%,#c9a227 75%,#f7e079 100%);
     box-shadow:
       inset 0 0 8px rgba(0,0,0,0.6),
       inset 0 1px 2px rgba(255,255,255,0.7),
-      0 2px 6px rgba(0,0,0,0.5);}
-  .wallet-chip::before{content:"";position:absolute;inset:5px;border-radius:4px;
+      0 2px 6px rgba(0,0,0,0.5);
+    z-index:3;
+  }
+  .card-chip::before{
+    content:"";position:absolute;inset:5px;border-radius:4px;
     border:1px solid rgba(0,0,0,0.35);
     background:
-      linear-gradient(90deg,transparent 48%,rgba(0,0,0,0.4) 48%,rgba(0,0,0,0.4) 52%,transparent 52%),
-      linear-gradient(0deg,transparent 48%,rgba(0,0,0,0.4) 48%,rgba(0,0,0,0.4) 52%,transparent 52%);}
+      linear-gradient(90deg,transparent 46%,rgba(0,0,0,0.4) 46%,rgba(0,0,0,0.4) 54%,transparent 54%),
+      linear-gradient(0deg,transparent 46%,rgba(0,0,0,0.4) 46%,rgba(0,0,0,0.4) 54%,transparent 54%);
+  }
 
-  .wallet-contactless{position:absolute;top:24px;right:22px;width:28px;height:28px;
-    border-radius:50%;display:flex;align-items:center;justify-content:center;
-    color:var(--gold);font-size:18px;opacity:0.75;transform:rotate(90deg);z-index:3;
-    filter:drop-shadow(0 0 8px rgba(255,215,0,0.5));}
-
-  .wallet-label{font-size:9px;color:var(--text-dim);letter-spacing:4px;text-transform:uppercase;font-weight:800;position:relative;z-index:3;}
-  .wallet-amount{font-size:46px;font-weight:900;line-height:1;margin:8px 0 6px;
-    background:linear-gradient(180deg,#fff9d6 0%,var(--gold) 45%,var(--gold-3) 100%);
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-    text-shadow:0 0 60px rgba(255,215,0,0.5);
-    letter-spacing:-2.5px;position:relative;z-index:3;
-    font-variant-numeric:tabular-nums;}
-
-  /* Embossed card number */
-  .wallet-number{font-family:"SF Mono","Courier New",monospace;
-    font-size:14px;letter-spacing:3px;margin-top:10px;position:relative;z-index:3;
-    direction:ltr;
-    color:rgba(255,240,180,0.9);
+  /* Number */
+  .card-number{
+    font-family:"SF Mono","Courier New",monospace;
+    font-size:clamp(14px,3.6vw,20px);
+    letter-spacing:2px;
+    color:rgba(255,245,200,0.95);
     text-shadow:
       0 1px 0 rgba(0,0,0,0.9),
       0 -1px 0 rgba(255,255,255,0.15),
-      0 0 12px rgba(255,215,0,0.3);
-    font-weight:700;}
+      0 0 15px rgba(255,215,0,0.35);
+    font-weight:700;
+    direction:ltr;
+    text-align:left;
+    padding:2% 0;
+    z-index:3;position:relative;
+    line-height:1.1;
+  }
 
-  .wallet-stats{display:flex;gap:22px;position:relative;z-index:3;margin-top:16px;
-    padding-top:14px;border-top:1px solid rgba(255,215,0,0.15);}
-  .wallet-stat{font-size:10px;color:var(--text-dim);letter-spacing:0.5px;font-weight:600;}
-  .wallet-stat b{display:block;color:var(--gold);font-size:15px;font-weight:900;margin-top:3px;
-    text-shadow:0 0 12px rgba(255,215,0,0.4);font-variant-numeric:tabular-nums;}
+  /* Bottom row - holder + expiry + network */
+  .card-bottom{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    position:relative;z-index:3;gap:8px;
+  }
+  .card-holder-block{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
+  .card-label{
+    font-size:7.5px;color:var(--text-dim);letter-spacing:2.5px;
+    text-transform:uppercase;font-weight:800;
+  }
+  .card-holder-name{
+    font-size:11px;color:#fff;font-weight:800;
+    letter-spacing:1.2px;text-transform:uppercase;
+    text-shadow:0 1px 2px rgba(0,0,0,0.7);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .card-expiry{display:flex;flex-direction:column;gap:2px;align-items:center;}
+  .card-expiry-value{
+    font-size:11px;color:#fff;font-weight:800;letter-spacing:1px;
+    font-family:"SF Mono",monospace;
+    text-shadow:0 1px 2px rgba(0,0,0,0.7);
+  }
+  .card-network{display:flex;align-items:center;}
+  .card-network .c1,
+  .card-network .c2{
+    width:22px;height:22px;border-radius:50%;
+  }
+  .card-network .c1{background:radial-gradient(circle at 30% 30%,#ff6b6b,#c92a2a);}
+  .card-network .c2{margin-left:-9px;background:radial-gradient(circle at 30% 30%,#ffd93d,#f59f00);}
 
-  /* Card holder + expiry at bottom */
-  .wallet-holder{display:flex;justify-content:space-between;align-items:flex-end;
-    margin-top:16px;position:relative;z-index:3;}
-  .wallet-holder-info{display:flex;flex-direction:column;gap:3px;}
-  .wallet-holder-label{font-size:8px;color:var(--text-dim);letter-spacing:2.5px;text-transform:uppercase;font-weight:800;}
-  .wallet-holder-name{font-size:13px;color:#fff;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-    text-shadow:0 1px 2px rgba(0,0,0,0.7);}
-  .wallet-network{display:flex;align-items:center;gap:4px;}
-  .wallet-network .circle{width:24px;height:24px;border-radius:50%;
-    background:radial-gradient(circle at 30% 30%,#ff6b6b,#c92a2a);
-    box-shadow:0 2px 6px rgba(0,0,0,0.5);}
-  .wallet-network .circle:nth-child(2){margin-left:-10px;
-    background:radial-gradient(circle at 30% 30%,#ffd93d,#f59f00);}
+  /* Balance overlay on card */
+  .card-balance{
+    position:absolute;top:50%;left:6%;right:6%;
+    transform:translateY(-50%);
+    z-index:4;pointer-events:none;
+    text-align:center;
+  }
+  .card-balance-label{
+    font-size:8px;letter-spacing:3px;color:rgba(255,255,255,0.5);
+    text-transform:uppercase;font-weight:800;margin-bottom:4px;
+  }
+  .card-balance-amount{
+    font-size:clamp(22px,6vw,32px);font-weight:900;line-height:1;
+    background:linear-gradient(180deg,#fff9d6 0%,var(--gold) 45%,var(--gold-3) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    text-shadow:0 0 60px rgba(255,215,0,0.5);
+    letter-spacing:-1.5px;
+    font-variant-numeric:tabular-nums;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+  }
+
+  /* Small stats below card */
+  .card-stats-row{
+    display:flex;gap:8px;margin-bottom:16px;
+  }
+  .card-stat{
+    flex:1;padding:12px 8px;text-align:center;
+    background:linear-gradient(160deg,rgba(255,215,0,0.08),var(--glass));
+    border:1px solid var(--border);
+    border-radius:14px;
+  }
+  .card-stat-icon{font-size:16px;margin-bottom:3px;}
+  .card-stat-value{
+    font-size:16px;font-weight:900;color:var(--gold);
+    text-shadow:0 0 12px rgba(255,215,0,0.4);
+    font-variant-numeric:tabular-nums;
+  }
+  .card-stat-label{
+    font-size:9px;color:var(--text-dim);margin-top:2px;
+    text-transform:uppercase;letter-spacing:1.2px;font-weight:700;
+  }
 
   /* Progress */
   .progress-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:8px;font-weight:700;}
@@ -180,7 +266,6 @@
   .section-title{font-size:15px;font-weight:800;margin:22px 0 12px;display:flex;align-items:center;gap:8px;}
   .section-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--border-2),transparent);margin-inline-start:8px;}
 
-  /* Ad Hero */
   .ad-hero{padding:0;margin-bottom:18px;border-radius:24px;overflow:hidden;
     background:linear-gradient(160deg,rgba(168,85,247,0.15),rgba(59,130,246,0.08));
     border:1px solid rgba(168,85,247,0.3);position:relative;animation:fadeSlide 0.35s ease;
@@ -334,8 +419,10 @@
   .task-desc{font-size:12px;color:var(--text-dim);margin-top:3px;}
   .task-reward{font-size:13px;font-weight:800;padding:10px 14px;border-radius:14px;white-space:nowrap;cursor:pointer;
     display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;}
-  .task-reward.open{color:var(--blue);background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);}
+  .task-reward.open{color:#fff;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;box-shadow:0 4px 16px rgba(59,130,246,0.4);}
   .task-reward.open:active{transform:scale(0.95);}
+  .task-reward.opened{color:var(--blue);background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.5);}
+  .task-reward.opened:active{transform:scale(0.95);}
   .task-reward.waiting{color:var(--gold);background:rgba(255,170,0,0.15);border:1px solid rgba(255,170,0,0.4);cursor:not-allowed;font-variant-numeric:tabular-nums;}
   .task-reward.ready{color:#000;background:linear-gradient(135deg,var(--gold),var(--gold-2));border:none;box-shadow:0 4px 16px rgba(255,215,0,0.5);animation:readyBtn 1.5s ease-in-out infinite;}
   @keyframes readyBtn{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
@@ -368,7 +455,6 @@
   .lb-handle{font-size:11px;color:var(--text-dim);}
   .lb-score{font-size:13px;font-weight:800;color:var(--gold);white-space:nowrap;}
 
-  /* Profile */
   .profile-hero{text-align:center;padding:30px 20px 24px;
     background:linear-gradient(160deg,rgba(255,215,0,0.12),rgba(168,85,247,0.06));
     border:1px solid var(--border-2);border-radius:28px;margin-bottom:18px;}
@@ -405,7 +491,6 @@
   .ref-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
   .ref-actions .btn{padding:10px;font-size:12px;}
 
-  /* ═══════════ INPUTS — فخمة ═══════════ */
   .input{width:100%;padding:16px 18px;background:var(--glass);border:1px solid var(--border);
     border-radius:16px;color:var(--text);font-size:14px;font-family:inherit;
     direction:ltr;text-align:left;margin-bottom:12px;transition:all 0.2s;}
@@ -430,20 +515,15 @@
   .info-value{font-weight:800;}
   .info-value.gold{color:var(--gold);}
 
-  /* ═══════════ COUNTRIES — محسّنة ═══════════ */
   .country-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
   .country-btn{padding:16px 8px;text-align:center;background:var(--glass);border:1px solid var(--border);
     border-radius:16px;cursor:pointer;transition:all 0.25s;font-family:inherit;color:var(--text);position:relative;overflow:hidden;}
-  .country-btn::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,215,0,0.1),transparent);
-    opacity:0;transition:opacity 0.25s;}
   .country-btn:active{transform:scale(0.96);}
   .country-btn.active{background:linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,170,0,0.08));
-    border-color:var(--gold);box-shadow:0 0 24px rgba(255,215,0,0.35),inset 0 1px 0 rgba(255,255,255,0.1);}
-  .country-btn.active::before{opacity:1;}
+    border-color:var(--gold);box-shadow:0 0 24px rgba(255,215,0,0.35);}
   .country-flag{font-size:26px;margin-bottom:6px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5));}
   .country-name{font-size:11px;font-weight:700;position:relative;}
 
-  /* ═══════════ METHODS — محسّنة ═══════════ */
   .method-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
   .method-btn{padding:14px 16px;text-align:right;background:var(--glass);border:1px solid var(--border);
     border-radius:14px;cursor:pointer;font-family:inherit;color:var(--text);font-size:14px;font-weight:700;
@@ -453,12 +533,10 @@
     border-color:var(--gold);box-shadow:0 0 20px rgba(255,215,0,0.25);}
   .method-btn.active::after{content:"✓";margin-inline-start:auto;color:var(--gold);font-weight:900;font-size:16px;}
 
-  /* ═══════════ HISTORY — محسّنة ═══════════ */
   .wd-row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;
     background:linear-gradient(160deg,var(--glass-2),var(--glass));
     border:1px solid var(--border);border-radius:16px;margin-bottom:8px;font-size:13px;
     transition:all 0.2s;}
-  .wd-row:active{transform:scale(0.99);}
   .wd-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
   .wd-icon{font-size:22px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;
     background:rgba(255,215,0,0.08);border:1px solid var(--border);border-radius:12px;flex-shrink:0;}
@@ -472,7 +550,6 @@
   .wd-status.approved{background:rgba(0,230,118,0.15);color:var(--green);border:1px solid rgba(0,230,118,0.3);}
   .wd-status.rejected{background:rgba(255,82,82,0.15);color:var(--red);border:1px solid rgba(255,82,82,0.3);}
 
-  /* Contact */
   .contact-hero{padding:26px;text-align:center;
     background:linear-gradient(160deg,rgba(255,215,0,0.15),rgba(168,85,247,0.08));
     border:1px solid var(--border-2);border-radius:26px;margin-bottom:18px;}
@@ -480,7 +557,6 @@
   .contact-hero-title{font-size:22px;font-weight:900;margin-bottom:8px;}
   .contact-hero-desc{font-size:13px;color:var(--text-dim);line-height:1.7;}
 
-  /* Admin */
   .admin-header{padding:18px;text-align:center;
     background:linear-gradient(160deg,rgba(255,215,0,0.18),rgba(168,85,247,0.1));
     border:1px solid var(--border-2);border-radius:24px;margin-bottom:18px;
@@ -528,7 +604,6 @@
   .media-add:active{background:rgba(255,215,0,0.12);}
   .media-add-icon{font-size:24px;}
 
-  /* Nav */
   .nav{position:fixed;bottom:14px;left:14px;right:14px;max-width:452px;margin:0 auto;
     display:flex;padding:8px;background:rgba(12,12,28,0.85);
     backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
@@ -585,7 +660,6 @@
     border-radius:12px;font-size:12px;color:var(--blue);margin-bottom:12px;text-align:center;font-weight:700;display:none;}
   .upload-status.active{display:block;}
 
-  /* ═══════════ WALLET PAGE — Steps ═══════════ */
   .steps-row{display:flex;align-items:center;justify-content:space-between;
     padding:16px 6px;margin-bottom:8px;}
   .step-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative;}
@@ -601,7 +675,6 @@
   .step-label{font-size:9px;color:var(--text-dim);font-weight:700;text-align:center;}
   .step-item.active .step-label{color:var(--gold);}
 
-  /* Amount Input Premium */
   .amount-wrap{position:relative;margin-bottom:12px;}
   .amount-symbol{position:absolute;top:50%;transform:translateY(-50%);
     inset-inline-start:18px;color:var(--gold);font-size:20px;font-weight:900;pointer-events:none;z-index:2;}
@@ -616,12 +689,23 @@
     transition:all 0.2s;}
   .quick-btn:active{transform:scale(0.95);background:rgba(255,215,0,0.15);border-color:var(--gold);color:var(--gold);}
 
-  /* Notification card */
   .notice-card{padding:14px 16px;display:flex;align-items:flex-start;gap:12px;
     background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(59,130,246,0.05));
     border:1px solid rgba(59,130,246,0.3);border-radius:14px;margin-bottom:14px;}
   .notice-icon{font-size:20px;flex-shrink:0;}
   .notice-text{font-size:12px;color:var(--text-dim);line-height:1.6;}
+
+  /* Confirm button style */
+  .task-reward.confirm{
+    color:#fff;background:linear-gradient(135deg,#3b82f6,#2563eb);
+    border:none;box-shadow:0 4px 16px rgba(59,130,246,0.5);
+    animation:confirmPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes confirmPulse{
+    0%,100%{box-shadow:0 4px 16px rgba(59,130,246,0.5);}
+    50%{box-shadow:0 4px 24px rgba(59,130,246,0.9);}
+  }
+  .task-reward.confirm:active{transform:scale(0.95);}
 </style>
 </head>
 <body>
@@ -636,7 +720,6 @@
 <div class="hb" id="hbIndicator"><div class="hb-dot"></div><span id="hbText">LIVE</span></div>
 
 <div id="app">
-  <!-- HEADER -->
   <div class="header">
     <img class="avatar" id="headerAvatar" alt="" style="display:none" />
     <div class="avatar" id="headerAvatarFallback">U</div>
@@ -653,20 +736,50 @@
 
   <!-- HOME -->
   <div class="tab active" id="tab-home">
-    <div class="wallet-card">
-      <div class="holo"></div>
-      <div class="wallet-contactless">)))</div>
-      <div class="wallet-top">
-        <div class="wallet-brand">ADVAULT VIP</div>
-        <div class="wallet-chip"></div>
+    <div class="bank-card-wrap">
+      <div class="bank-card">
+        <div class="bank-holo"></div>
+        <div class="card-top">
+          <div class="card-brand"><span class="dot"></span>ADVAULT VIP</div>
+          <div class="card-contactless">)))</div>
+        </div>
+        <div class="card-chip"></div>
+        <div class="card-balance">
+          <div class="card-balance-label" id="lblBalanceCard">Available Balance</div>
+          <div class="card-balance-amount" id="balance">$0.00</div>
+        </div>
+        <div class="card-number">•••• •••• •••• <span id="walletIdShort">0000</span></div>
+        <div class="card-bottom">
+          <div class="card-holder-block">
+            <div class="card-label" id="lblHolderLabel">CARD HOLDER</div>
+            <div class="card-holder-name" id="cardHolderName">MINER</div>
+          </div>
+          <div class="card-expiry">
+            <div class="card-label">VALID</div>
+            <div class="card-expiry-value">12/29</div>
+          </div>
+          <div class="card-network">
+            <div class="c1"></div><div class="c2"></div>
+          </div>
+        </div>
       </div>
-      <div class="wallet-label" id="lblBalanceCard">Available Balance</div>
-      <div class="wallet-amount" id="balance">$0.00</div>
-      <div class="wallet-number">•••• •••• •••• <span id="walletIdShort">0000</span></div>
-      <div class="wallet-stats">
-        <div class="wallet-stat"><span id="lblTotalCard">Total Earned</span><b id="totalEarned">$0.00</b></div>
-        <div class="wallet-stat"><span id="lblRefsCard">Referrals</span><b id="walletRefs">0</b></div>
-        <div class="wallet-stat"><span id="lblStreakCard">Streak</span><b id="walletStreak">0</b></div>
+    </div>
+
+    <div class="card-stats-row">
+      <div class="card-stat">
+        <div class="card-stat-icon">📊</div>
+        <div class="card-stat-value" id="totalEarned">$0.00</div>
+        <div class="card-stat-label" id="lblTotalCard">Total</div>
+      </div>
+      <div class="card-stat">
+        <div class="card-stat-icon">🤝</div>
+        <div class="card-stat-value" id="walletRefs">0</div>
+        <div class="card-stat-label" id="lblRefsCard">Refs</div>
+      </div>
+      <div class="card-stat">
+        <div class="card-stat-icon">🔥</div>
+        <div class="card-stat-value" id="walletStreak">0</div>
+        <div class="card-stat-label" id="lblStreakCard">Streak</div>
       </div>
     </div>
 
@@ -706,23 +819,48 @@
 
   <!-- WALLET -->
   <div class="tab" id="tab-wallet">
-    <div class="wallet-card">
-      <div class="holo"></div>
-      <div class="wallet-contactless">)))</div>
-      <div class="wallet-top">
-        <div class="wallet-brand">ADVAULT WALLET</div>
-        <div class="wallet-chip"></div>
-      </div>
-      <div class="wallet-label" id="lblBalanceCard2">Balance</div>
-      <div class="wallet-amount" id="walletBalance">$0.00</div>
-      <div class="wallet-number">•••• •••• •••• <span id="walletIdShort2">0000</span></div>
-      <div class="wallet-stats">
-        <div class="wallet-stat"><span id="lblTotalCard2">Total</span><b id="walletTotal">$0.00</b></div>
-        <div class="wallet-stat"><span id="lblMinCard">Min</span><b>$<span id="minWithdraw">10.00</span></b></div>
+    <div class="bank-card-wrap">
+      <div class="bank-card">
+        <div class="bank-holo"></div>
+        <div class="card-top">
+          <div class="card-brand"><span class="dot"></span>ADVAULT WALLET</div>
+          <div class="card-contactless">)))</div>
+        </div>
+        <div class="card-chip"></div>
+        <div class="card-balance">
+          <div class="card-balance-label" id="lblBalanceCard2">Balance</div>
+          <div class="card-balance-amount" id="walletBalance">$0.00</div>
+        </div>
+        <div class="card-number">•••• •••• •••• <span id="walletIdShort2">0000</span></div>
+        <div class="card-bottom">
+          <div class="card-holder-block">
+            <div class="card-label">CARD HOLDER</div>
+            <div class="card-holder-name" id="cardHolderName2">MINER</div>
+          </div>
+          <div class="card-expiry">
+            <div class="card-label">VALID</div>
+            <div class="card-expiry-value">12/29</div>
+          </div>
+          <div class="card-network">
+            <div class="c1"></div><div class="c2"></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Step indicator -->
+    <div class="card-stats-row">
+      <div class="card-stat">
+        <div class="card-stat-icon">📊</div>
+        <div class="card-stat-value" id="walletTotal">$0.00</div>
+        <div class="card-stat-label" id="lblTotalCard2">Total</div>
+      </div>
+      <div class="card-stat">
+        <div class="card-stat-icon">💸</div>
+        <div class="card-stat-value">$<span id="minWithdraw">10.00</span></div>
+        <div class="card-stat-label" id="lblMinCard">Min</div>
+      </div>
+    </div>
+
     <div class="steps-row" id="stepsRow">
       <div class="step-item active" data-step="1">
         <div class="step-dot">1</div>
@@ -1059,6 +1197,7 @@ function applyLang(){
   setText("lblTotalCard", L.total_earned || "Total");
   setText("lblRefsCard", L.referrals || "Referrals");
   setText("lblStreakCard", L.streak || "Streak");
+  setText("lblHolderLabel", lang === "ar" ? "حامل البطاقة" : "CARD HOLDER");
   setText("lblAdsToday", "👁️ " + (L.ads_today || "Ads Today"));
   setText("lblAdsTitle", "📺 " + (L.home || "Home"));
   setText("startBtn", "🎬 " + (L.start_ad || "Start"));
@@ -1080,7 +1219,6 @@ function applyLang(){
   setText("btnWithdraw", "💸 " + (L.send_request || "Send"));
   setText("lblHistoryTitle", "📜 " + (L.history || "History"));
 
-  // Wallet steps
   if (lang === "ar") {
     setText("stepLabel1", "الدولة");
     setText("stepLabel2", "الطريقة");
@@ -1155,6 +1293,8 @@ function updateUI(u){
   document.getElementById("headerId").textContent = "🆔 " + u.user_id;
   document.getElementById("walletIdShort").textContent = String(u.user_id).slice(-4);
   document.getElementById("walletIdShort2").textContent = String(u.user_id).slice(-4);
+  document.getElementById("cardHolderName").textContent = (u.first_name || "MINER").toUpperCase();
+  document.getElementById("cardHolderName2").textContent = (u.first_name || "MINER").toUpperCase();
 
   const hA = document.getElementById("headerAvatar"), hF = document.getElementById("headerAvatarFallback");
   const pA = document.getElementById("profileAvatar"), pF = document.getElementById("profileAvatarFallback");
@@ -1527,7 +1667,7 @@ async function completeAd(adId){
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// TASKS
+// TASKS — 4 مراحل محمية
 // ═══════════════════════════════════════════════════════════════════════
 async function loadTasks(){
   tasks = await api("/api/tasks?user_id=" + user.user_id);
@@ -1540,24 +1680,36 @@ function renderTasks(){
     list.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">${LANGS.no_tasks || "No tasks"}</div></div>`;
     return;
   }
+
   Object.values(taskTimers).forEach(t => clearInterval(t));
   taskTimers = {};
 
   list.innerHTML = tasks.map(task => {
+    const state = task.state || "open";
     let stateClass = "";
     let rewardHTML = "";
-    if (task.completed){
+
+    const openText    = lang === "ar" ? "انضم الآن" : "Join Now";
+    const openedText  = lang === "ar" ? "تأكيد الدخول" : "Confirm Entry";
+    const readyText   = lang === "ar" ? "استلم" : "Claim";
+    const doneText    = lang === "ar" ? "تم" : "Done";
+
+    if (state === "done"){
       stateClass = "done";
-      rewardHTML = `<div class="task-reward done">✔ ${LANGS.task_done || "Done"}</div>`;
-    } else if (task.can_claim){
+      rewardHTML = `<div class="task-reward done">✔ ${doneText}</div>`;
+    } else if (state === "ready"){
       stateClass = "ready";
-      rewardHTML = `<div class="task-reward ready" onclick="claimTask(${task.id})">🎁 ${LANGS.task_ready || "Claim"} +$${task.reward.toFixed(2)}</div>`;
-    } else if (task.started){
+      rewardHTML = `<div class="task-reward ready" onclick="claimTask(${task.id})">🎁 ${readyText} +$${task.reward.toFixed(2)}</div>`;
+    } else if (state === "waiting"){
       stateClass = "waiting";
       rewardHTML = `<div class="task-reward waiting" id="taskReward-${task.id}">⏳ ${task.remaining}s</div>`;
+    } else if (state === "opened"){
+      stateClass = "waiting";
+      rewardHTML = `<div class="task-reward confirm" id="taskReward-${task.id}" onclick="confirmTask(${task.id})">✅ ${openedText}</div>`;
     } else {
-      rewardHTML = `<div class="task-reward open" onclick="startTask(${task.id})">🔗 ${LANGS.task_open || "Open"} +$${task.reward.toFixed(2)}</div>`;
+      rewardHTML = `<div class="task-reward open" onclick="startTask(${task.id})">🔗 ${openText} +$${task.reward.toFixed(2)}</div>`;
     }
+
     return `
     <div class="task ${stateClass}" id="taskRow-${task.id}">
       <div class="task-icon">${task.icon||"🎯"}</div>
@@ -1570,7 +1722,9 @@ function renderTasks(){
   }).join("");
 
   tasks.forEach(task => {
-    if (task.started && !task.completed && !task.can_claim) startTaskCountdown(task.id, task.remaining);
+    if (task.state === "waiting" && task.remaining > 0) {
+      startTaskCountdown(task.id, task.remaining);
+    }
   });
 }
 
@@ -1590,41 +1744,78 @@ function startTaskCountdown(taskId, remaining){
   }, 1000);
 }
 
+// المرحلة 1: انضم الآن
 async function startTask(taskId){
   const task = tasks.find(t => t.id === taskId);
   if (!task || task.completed) return;
+
+  // فتح الرابط
   if (task.url) {
     if (tg && task.url.startsWith("https://t.me/")) {
       try { tg.openTelegramLink(task.url); } catch(e){ tg.openLink(task.url); }
     } else if (tg) {
       try { tg.openLink(task.url); } catch(e){ window.open(task.url, "_blank"); }
-    } else { window.open(task.url, "_blank"); }
+    } else {
+      window.open(task.url, "_blank");
+    }
   }
+
   try {
-    const res = await api(`/api/tasks/${taskId}/start`, {
-      method:"POST", body: JSON.stringify({ user_id: user.user_id }),
+    await api(`/api/tasks/${taskId}/start`, {
+      method:"POST",
+      body: JSON.stringify({ user_id: user.user_id }),
     });
-    const wait = res.wait_seconds || 10;
+
+    // تحديث الزر → "تأكيد الدخول"
     const row = document.getElementById(`taskRow-${taskId}`);
     const rewardEl = document.getElementById(`taskReward-${taskId}`);
     if (row) { row.classList.remove("open"); row.classList.add("waiting"); }
+    if (rewardEl) {
+      rewardEl.className = "task-reward confirm";
+      rewardEl.onclick = () => confirmTask(taskId);
+      rewardEl.innerHTML = lang === "ar" ? "✅ تأكيد الدخول" : "✅ Confirm Entry";
+    }
+
+    toast(lang === "ar" 
+      ? "عد واضغط تأكيد الدخول" 
+      : "Return & press Confirm Entry", "success");
+  } catch(e){ toast(e.message, "error"); }
+}
+
+// المرحلة 2: تأكيد الدخول
+async function confirmTask(taskId){
+  const task = tasks.find(t => t.id === taskId);
+  if (!task || task.completed) return;
+
+  try {
+    const res = await api(`/api/tasks/${taskId}/confirm`, {
+      method:"POST",
+      body: JSON.stringify({ user_id: user.user_id }),
+    });
+
+    const wait = res.wait_seconds || 10;
+    const rewardEl = document.getElementById(`taskReward-${taskId}`);
     if (rewardEl) {
       rewardEl.className = "task-reward waiting";
       rewardEl.onclick = null;
       rewardEl.innerHTML = `⏳ ${wait}s`;
     }
     startTaskCountdown(taskId, wait);
-    toast("✅ " + (LANGS.task_opened || "Opened") + " — " + wait + "s", "success");
+    toast(lang === "ar" ? `انتظر ${wait} ثانية` : `Wait ${wait}s`, "success");
   } catch(e){ toast(e.message, "error"); }
 }
 
+// المرحلة 3: استلام
 async function claimTask(taskId){
   const task = tasks.find(t => t.id === taskId);
   if (!task || task.completed) return;
+
   try {
     const res = await api(`/api/tasks/${taskId}/claim`, {
-      method:"POST", body: JSON.stringify({ user_id: user.user_id }),
+      method:"POST",
+      body: JSON.stringify({ user_id: user.user_id }),
     });
+
     if (res.reward > 0){
       user.balance = res.balance;
       user.total_earned = (user.total_earned||0) + res.reward;
@@ -1831,9 +2022,6 @@ async function loadWithdrawals(){
   }).join("");
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// CONTACT
-// ═══════════════════════════════════════════════════════════════════════
 async function sendContact(){
   const msg = document.getElementById("contactMsg").value.trim();
   if (!msg){ toast("—","error"); return; }
